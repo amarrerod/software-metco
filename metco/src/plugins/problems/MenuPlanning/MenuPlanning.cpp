@@ -234,7 +234,8 @@ Individual *MenuPlanning::clone(void) const {
 /*----------------------------------------*/
 void MenuPlanning::dependentCrossover(Individual *ind) {
   crossover_uniform(ind);
-  computeFeasibility();
+  double fs = computeFeasibility();
+
   // ((MenuPlanning *)ind)->repair();
   // repair();
 }
@@ -267,7 +268,7 @@ void MenuPlanning::dependentMutation(double pm) {
 double MenuPlanning::computeFeasibility() {
   // Reseteamos el array de ID por nutriente
   restrictionsID.fill(0.0);
-  infeasibilityDegree = 0.0f;
+  infeasibilityDegree = 0.0;
   std::fill(forcedRestrictionsID.begin(), forcedRestrictionsID.end(), 0.0);
   std::array<double, num_nutr> infoNPlan;
   infoNPlan.fill(0.0);
@@ -284,7 +285,8 @@ double MenuPlanning::computeFeasibility() {
       dayNutr[j] += v_segundosPlatos[round(getVar(idx + 1))].infoN[j];
       dayNutr[j] += v_postres[round(getVar(idx + 2))].infoN[j];
       infoNPlan[j] += dayNutr[j];
-#ifdef __MPP_FEASIBILITY_DEBUG__
+#ifdef __MPP_PRINT_ID_EVO__
+
       std::cout << "Nutrient: " << ingRNames[j] << ": "
                 << "Main: " << v_primerosPlatos[round(getVar(idx))].infoN[j]
                 << " Second: "
@@ -298,7 +300,8 @@ double MenuPlanning::computeFeasibility() {
     // Calculamos los nutrientes forzados por dia
     for (int j = 0; j < FORCED_INDEXES_SIZE; j++) {
       int index = FORCED_INDEXES[j];
-#ifdef __MPP_FEASIBILITY_DEBUG__
+#ifdef __MPP_PRINT_ID_EVO__
+
       std::cout << "Nutrient: " << forcedNames[j] << ": " << dayNutr[index]
                 << "\tDaily req [" << ingR[index] * FORCED_MIN[j] << ", "
                 << ingR[index] * FORCED_MAX[j] << "]" << std::endl;
@@ -325,7 +328,8 @@ double MenuPlanning::computeFeasibility() {
   for (unsigned int i = 0; i < num_nutr; i++) {
     if ((i == CALCIUM_INDEX) || (i == POTASIUM_INDEX) || (i == IRON_INDEX))
       continue;
-#ifdef __MPP_FEASIBILITY_DEBUG__
+#ifdef __MPP_PRINT_ID_EVO__
+
     std::cout << "Nutrient: " << ingRNames[i] << ": " << infoNPlan[i]
               << "\tGlobal req [" << ingR[i] * minReq[i] * nDias << ", "
               << ingR[i] * maxReq[i] * nDias << "]" << std::endl;
@@ -343,12 +347,7 @@ double MenuPlanning::computeFeasibility() {
       restrictionsID[i] = (infoNPlan[i] - (ingR[i] * maxReq[i] * nDias));
     }
   }
-#ifdef __MPP_FEASIBILITY_DEBUG__
-  if (std::abs(infeasibilityDegree - 0.0) < 0.001) {
-    std::cout << "Infeasibility less than 0.001: " << infeasibilityDegree
-              << std::endl;
-  }
-#endif
+
   // devolvemos id(S) = did(S) + gid(S)
   return infeasibilityDegree;
 }

@@ -89,12 +89,13 @@ const double ingR[21] = {
     ingR_pot,   ingR_pro,  ingR_sel, ingR_sod, ingR_vA,  ingR_vB1, ingR_vB2,
     ingR_vB6,   ingR_vB12, ingR_vC,  ingR_vD,  ingR_vE,  ingR_yod, ingR_zin};
 
-const double minReq[21] = {0.35, 0.35, 0.55, 0.35, 0.55, 0.35, 0.35,
-                           0.35, 0.55, 0.35, 0.35, 0.35, 0.35, 0.35,
-                           0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35};
-const double maxReq[21] = {1.65, 1.65, 1.45, 1.65, 1.45, 1.65, 1.65,
-                           1.65, 1.45, 1.65, 1.65, 1.65, 1.65, 1.65,
-                           1.65, 1.65, 1.65, 1.65, 1.65, 1.65, 1.65};
+const std::array<double, num_nutr> minReq = {
+    0.35, 0.35, 0.55, 0.35, 0.55, 0.35, 0.35, 0.35, 0.55, 0.35, 0.35,
+    0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35};
+const std::array<double, num_nutr> maxReq = {
+    1.65, 1.65, 1.45, 1.65, 1.45, 1.65, 1.65, 1.65, 1.45, 1.65, 1.65,
+    1.65, 1.65, 1.65, 1.65, 1.65, 1.65, 1.65, 1.65, 1.65, 1.65};
+    
 const int NPLATOS[3] = {19, 34, 14};
 
 const std::array<std::string, num_nutr> ingRNames = {
