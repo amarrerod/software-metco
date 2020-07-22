@@ -272,7 +272,6 @@ double MenuPlanning::computeFeasibility() {
   std::fill(forcedRestrictionsID.begin(), forcedRestrictionsID.end(), 0.0);
   std::array<double, num_nutr> infoNPlan;
   infoNPlan.fill(0.0);
-
   // Bucle para calcular did(S)
   for (int i = 0; i < nDias; i++) {
     int idx = i * num_tipoPlato;
@@ -349,6 +348,8 @@ double MenuPlanning::computeFeasibility() {
   }
 
   // devolvemos id(S) = did(S) + gid(S)
+  // Y definimos el fitness como ID(S)
+  this->setFitnessValue(infeasibilityDegree);
   return infeasibilityDegree;
 }
 
@@ -454,7 +455,7 @@ void MenuPlanning::evaluate(void) {
  * individuos resultantes
  */
 void MenuPlanning::print(ostream &os) const {
-  os << "========================================" << std::endl;
+  /*os << "========================================" << std::endl;
   os << "Restricciones diarias" << std::endl;
   for (unsigned int i = 0; i < nDias; i++) {
     os << "Día #" << i << std::endl;
@@ -469,7 +470,13 @@ void MenuPlanning::print(ostream &os) const {
     os << "\t- " << ingRNames[i] << " = " << restrictionsID[i] << std::endl;
   }
   os << "ID(S) = " << this->infeasibilityDegree << endl;
-  os << "========================================" << std::endl;
+  os << "========================================" << std::endl;*/
+  for (unsigned int i = 0; i < this->getNumberOfVar(); i++)
+    os << getVar(i) << " ";
+  for (unsigned int i = 0; i < this->getNumberOfObj(); i++)
+    os << getObj(i) << " ";
+
+  os << getFitnessValue() << std::endl;
 }
 #endif
 

@@ -95,7 +95,7 @@ const std::array<double, num_nutr> minReq = {
 const std::array<double, num_nutr> maxReq = {
     1.65, 1.65, 1.45, 1.65, 1.45, 1.65, 1.65, 1.65, 1.45, 1.65, 1.65,
     1.65, 1.65, 1.65, 1.65, 1.65, 1.65, 1.65, 1.65, 1.65, 1.65};
-    
+
 const int NPLATOS[3] = {19, 34, 14};
 
 const std::array<std::string, num_nutr> ingRNames = {
