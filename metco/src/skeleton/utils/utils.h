@@ -111,9 +111,4 @@ bool orderByObjective(Individual *i1, Individual *i2);
 void changeFirst(string &str, int n, string &result);
 int hammingDistance(const Individual *i1, const Individual *i2);
 
-void FastNondominatedSortByFitness(vector<Individual *> *p,
-                                   vector<vector<Individual *> > &fronts,
-                                   vector<Individual *> &notClassified,
-                                   int &differentsInFront0, int minClassified);
-
 #endif

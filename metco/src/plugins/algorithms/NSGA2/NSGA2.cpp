@@ -78,8 +78,8 @@ void NSGA2::rankCrowdingPopulation() {
 
   // Calculate fronts
   int differentsInFront0;
-  FastNondominatedSortByFitness(population, fronts, notClassified,
-                                differentsInFront0, getPopulationSize());
+  FastNondominatedSort(population, fronts, notClassified, differentsInFront0,
+                       getPopulationSize());
 
   // Order each front using the local crowding distance
   for (int i = 0; i < fronts.size(); i++) crowOrder(fronts[i]);
