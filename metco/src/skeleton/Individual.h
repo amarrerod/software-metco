@@ -144,6 +144,8 @@ class Individual : public Plugin {
   Individual(void) {
     mutOperator = NULL;
     crossOperator = NULL;
+    feasibility = 0.0;
+    fitnessValue = 0.0;
   }
 
   // Destructor
@@ -199,6 +201,7 @@ class Individual : public Plugin {
     return algorithmData.size();
   }
   double inline getFitnessValue(void) const { return fitnessValue; }
+  double inline getFeasibility(void) const { return feasibility; }
   Owner inline getOwner(void) const { return owner; }
   unsigned int getInternalOptDirection(const int i) const;
   virtual double getMaximum(const int i) const = 0;
@@ -214,6 +217,7 @@ class Individual : public Plugin {
   void inline setObj(const int i, const long double value) { obj[i] = value; }
   void inline setVar(const int i, const double value) { var[i] = value; }
   void inline setFitnessValue(const double value) { fitnessValue = value; }
+  void inline setFeasibility(const double value) { feasibility = value; }
   void inline setMigrationData(const int i, const double value) {
     migrationData[i] = value;
   }
@@ -352,6 +356,7 @@ class Individual : public Plugin {
 
   // Valor de fitness del individuo
   double fitnessValue;
+  double feasibility;
 
   Mutation *mutOperator;
   Crossover *crossOperator;
@@ -364,6 +369,7 @@ class Individual : public Plugin {
 bool cmpIndividual(Individual *ind1, Individual *ind2);
 bool ordByFitness(Individual *i1, Individual *i2);
 bool reverseOrdByFitness(Individual *i1, Individual *i2);
+bool orderByFeasibility(Individual *, Individual *);
 
 // Library functions
 Individual *getInd(const string &pluginPath, const string &pluginName,

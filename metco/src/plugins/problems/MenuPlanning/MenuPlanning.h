@@ -47,10 +47,10 @@ struct infoPlatos {
 class MenuPlanning : public Individual {
  private:
   // Grado de Infactibilidad ID(S)
-  double infeasibilityDegree;
+  // double infeasibilityDegree;
   // Grado de infactibilidad por cada restriccion
-  array<double, num_nutr> restrictionsID;
-  vector<double> forcedRestrictionsID;
+  // array<double, num_nutr> restrictionsID;
+  //  vector<double> forcedRestrictionsID;
 
   // Variables comunes a todas las instancias de MenuPlanning
   static int nDias;   // Numero de dias que tenemos que planificar
@@ -80,10 +80,10 @@ class MenuPlanning : public Individual {
   void set_gruposAl(void);        // Metodo que define los grupos de alimentos
   double computeFeasibility();    // Calcula la factibilidad de los individuos
 
-#ifdef __MPP_FEASIBILITY_DEBUG__
+  //#ifdef __MPP_FEASIBILITY_DEBUG__
   // Imprime los datos de un individuo MenuPlanning
-  virtual void print(std::ostream &os) const;
-#endif
+  //  virtual void print(std::ostream &os) const;
+  //#endif
 
   // Lectura de ficheros de platos
   void set_Platos(void) {

@@ -41,9 +41,9 @@ vector<double> MenuPlanning::infoNPlan;
  *
  * Constructor por defecto de una instancia de MenuPlanning
  */
-MenuPlanning::MenuPlanning() : infeasibilityDegree(0.0f) {
-  restrictionsID.fill(0.0f);
-  this->setFitnessValue(0.0);
+MenuPlanning::MenuPlanning() {
+  // restrictionsID.fill(0.0f);
+  this->setFeasibility(0.0);
 }
 
 /**
@@ -69,7 +69,7 @@ bool MenuPlanning::init(const vector<string> &params) {
   incompatibilidadesPlan.assign(num_incomp, "0");
 
   // Ajustamos el tamaño del vector de restricciones diarias
-  forcedRestrictionsID.resize(nDias * FORCED_INDEXES_SIZE, 0.0f);
+  // forcedRestrictionsID.resize(nDias * FORCED_INDEXES_SIZE, 0.0f);
 
   return true;
 }
@@ -223,11 +223,11 @@ void MenuPlanning::restart(void) {
  * Clonacion del individuo
  **/
 Individual *MenuPlanning::clone(void) const {
-  MenuPlanning *mpp = new MenuPlanning();
-  mpp->infeasibilityDegree = this->infeasibilityDegree;
-  mpp->restrictionsID = {this->restrictionsID};
-  mpp->forcedRestrictionsID = {this->forcedRestrictionsID};
-  return mpp;
+  // MenuPlanning *mpp = new MenuPlanning();
+  // mpp->infeasibilityDegree = this->infeasibilityDegree;
+  // mpp->restrictionsID = {this->restrictionsID};
+  // mpp->forcedRestrictionsID = {this->forcedRestrictionsID};
+  return new MenuPlanning();
 }
 
 /*----------------------------------------*/
@@ -267,7 +267,7 @@ void MenuPlanning::dependentMutation(double pm) {
  * Alejandro Marrero - alu0100825008@ull.edu.es
  **/
 double MenuPlanning::computeFeasibility() {
-  infeasibilityDegree = 0.0;
+  double infeasibilityDegree = 0.0;
   std::array<double, num_nutr> infoNPlan;
   infoNPlan.fill(0.0);
 
@@ -414,17 +414,18 @@ void MenuPlanning::evaluate(void) {
   ultimos5GA.clear();
   gaElegidosAnterior.clear();
   // Asignamos el valor de los objetivos
-  computeFeasibility();
-  setObj(0, precioTotal + infeasibilityDegree);
-  setObj(1, valTotal + infeasibilityDegree);
+  double feasi = computeFeasibility();
+  setFeasibility(feasi);
+  setObj(0, precioTotal + feasi);
+  setObj(1, valTotal + feasi);
 }
 
-#ifdef __MPP_FEASIBILITY_DEBUG__
+/*#ifdef __MPP_FEASIBILITY_DEBUG__
 /**
  * En esta version nos centramos únicamente en mostrar los
  * valores de cada nutriente para comprobar la factiblidad de los
  * individuos resultantes
- */
+ *
 void MenuPlanning::print(ostream &os) const {
   os << "========================================" << std::endl;
   os << "Restricciones diarias" << std::endl;
@@ -449,7 +450,7 @@ void MenuPlanning::print(ostream &os) const {
 
   os << this->getFitnessValue() << std::endl;
 }
-#endif
+#endif */
 
 /*----------------------------------------------------------------------*/
 /*---------- METODOS PARA EL CALCULO DEL GRADO DE REPETICION -----------*/

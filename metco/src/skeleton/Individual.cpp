@@ -9,9 +9,11 @@
  ************************************************************************************/
 
 #include "Individual.h"
+
 #include <dlfcn.h>
 #include <float.h>
 #include <math.h>
+
 #include <sstream>
 #include <string>
 
@@ -494,6 +496,7 @@ Individual *Individual::internalClone(void) const {
 
 void Individual::internalClone(const Individual *ind) {
   fitnessValue = ind->fitnessValue;
+  feasibility = ind->feasibility;
   mutOperator = ind->mutOperator;
   crossOperator = ind->crossOperator;
   multiObjectivizationsPlugins = ind->multiObjectivizationsPlugins;
@@ -655,6 +658,10 @@ bool ordByFitness(Individual *i1, Individual *i2) {
 
 bool reverseOrdByFitness(Individual *i1, Individual *i2) {
   return (i1->getFitnessValue() < i2->getFitnessValue());
+}
+
+bool orderByFeasibility(Individual *ind1, Individual *ind2) {
+  return (ind1->getFeasibility() < ind2->getFeasibility());
 }
 
 // Library functions
