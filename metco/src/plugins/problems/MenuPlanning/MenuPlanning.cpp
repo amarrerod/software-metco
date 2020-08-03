@@ -267,13 +267,10 @@ void MenuPlanning::dependentMutation(double pm) {
  * Alejandro Marrero - alu0100825008@ull.edu.es
  **/
 double MenuPlanning::computeFeasibility() {
-  // Reseteamos el array de ID por nutriente
-  restrictionsID.fill(0.0);
   infeasibilityDegree = 0.0;
-  setFitnessValue(0.0);
-  std::fill(forcedRestrictionsID.begin(), forcedRestrictionsID.end(), 0.0);
   std::array<double, num_nutr> infoNPlan;
   infoNPlan.fill(0.0);
+
   // Bucle para calcular did(S)
   for (int i = 0; i < nDias; i++) {
     int idx = i * num_tipoPlato;
@@ -286,43 +283,21 @@ double MenuPlanning::computeFeasibility() {
       dayNutr[j] += v_segundosPlatos[round(getVar(idx + 1))].infoN[j];
       dayNutr[j] += v_postres[round(getVar(idx + 2))].infoN[j];
       infoNPlan[j] += dayNutr[j];
-#ifdef __MPP_FEASIBILITY_DEBUG__
-      std::cout << "Nutrient: " << ingRNames[j] << ": "
-                << "Main: " << v_primerosPlatos[round(getVar(idx))].infoN[j]
-                << " Second: "
-                << v_segundosPlatos[round(getVar(idx + 1))].infoN[j]
-                << " Dessert: " << v_postres[round(getVar(idx + 2))].infoN[j];
-
-      std::cout << " Global intake of " << ingRNames[j] << ": " << infoNPlan[j]
-                << std::endl;
-#endif
     }
     // Calculamos los nutrientes forzados por dia
     for (int j = 0; j < FORCED_INDEXES_SIZE; j++) {
       int index = FORCED_INDEXES[j];
-#ifdef __MPP_FEASIBILITY_DEBUG__
-      std::cout << "Nutrient: " << forcedNames[j] << ": " << dayNutr[index]
-                << "\tDaily req [" << ingR[index] * FORCED_MIN[j] << ", "
-                << ingR[index] * FORCED_MAX[j] << "]" << std::endl;
-#endif
-
       if (dayNutr[index] < ingR[index] * FORCED_MIN[j]) {
         infeasibilityDegree +=
-            pow((ingR[index] * (FORCED_MIN[j] - dayNutr[index])), 2);
-#ifdef __MPP_FEASIBILITY_DEBUG__
-        // Guardamos la infactibilidad
-        forcedRestrictionsID[j * i] =
-            (ingR[index] * (FORCED_MIN[j] - dayNutr[index]));
-#endif
+            pow((ingR[index] * FORCED_MIN[j] - dayNutr[index]) / ingR[index],
+                2) *
+            1000000.0;
 
       } else if (dayNutr[index] > ingR[index] * FORCED_MAX[j]) {
         infeasibilityDegree +=
-            pow((dayNutr[index] - (ingR[index] * FORCED_MAX[j])), 2);
-#ifdef __MPP_FEASIBILITY_DEBUG__
-        // Guardamos la diferencia de infactibilidad
-        forcedRestrictionsID[j * i] =
-            (dayNutr[index] - (ingR[index] * FORCED_MAX[j]));
-#endif
+            pow((dayNutr[index] - ingR[index] * FORCED_MAX[j]) / ingR[index],
+                2) *
+            1000000.0;
       }
     }
   }
@@ -331,33 +306,19 @@ double MenuPlanning::computeFeasibility() {
   for (unsigned int i = 0; i < num_nutr; i++) {
     if ((i == CALCIUM_INDEX) || (i == POTASIUM_INDEX) || (i == IRON_INDEX))
       continue;
-#ifdef __MPP_FEASIBILITY_DEBUG__
-    std::cout << "Nutrient: " << ingRNames[i] << ": " << infoNPlan[i]
-              << "\tGlobal req [" << ingR[i] * minReq[i] * nDias << ", "
-              << ingR[i] * maxReq[i] * nDias << "]" << std::endl;
-#endif
     if (infoNPlan[i] < (ingR[i] * minReq[i] * nDias)) {
-      infeasibilityDegree =
-          pow(((ingR[i] * minReq[i] * nDias) - infoNPlan[i]), 2) * 1e6;
-#ifdef __MPP_FEASIBILITY_DEBUG__
-      // Guardamos la diferencia de factibilidad
-      restrictionsID[i] = ((ingR[i] * minReq[i] * nDias) - infoNPlan[i]);
-#endif
-    }
-    if (infoNPlan[i] > (ingR[i] * maxReq[i] * nDias)) {
-      infeasibilityDegree =
-          pow((infoNPlan[i] - (ingR[i] * maxReq[i] * nDias)), 2) * 1e6;
-#ifdef __MPP_FEASIBILITY_DEBUG__
-      // Guardamos la diferencia
-      restrictionsID[i] = (infoNPlan[i] - (ingR[i] * maxReq[i] * nDias));
-#endif
+      infeasibilityDegree = pow(
+          (ingR[i] * minReq[i] * nDias - infoNPlan[i]) / (ingR[i] * nDias), 2);
+      if (infoNPlan[i] > (ingR[i] * maxReq[i] * nDias)) {
+        infeasibilityDegree = pow(
+            (infoNPlan[i] - ingR[i] * maxReq[i] * nDias) / (ingR[i] * nDias),
+            2);
+      }
     }
   }
-  // El Fitness es un valor a maximizar, por eso le restamos ID(S)
-  setFitnessValue(std::numeric_limits<double>::max() - infeasibilityDegree);
+  infeasibilityDegree = infeasibilityDegree * 1e12;
 #ifdef __MPP_FEASIBILITY_DEBUG__
-  std::cout << "ID(S) = " << infeasibilityDegree
-            << " Fitness Value: " << getFitnessValue() << std::endl;
+  std::cout << "ID(S) = " << infeasibilityDegree << std::endl;
 #endif
   // devolvemos id(S) = did(S) + gid(S)
   return infeasibilityDegree;
