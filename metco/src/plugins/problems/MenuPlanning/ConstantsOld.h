@@ -57,7 +57,7 @@ const int PROTEIN_INDEX = 8;
 const int FORCED_INDEXES_SIZE = 3;
 const int FORCED_INDEXES[3] = {ENERGY_INDEX, FAT_INDEX, PROTEIN_INDEX};
 const double FORCED_MIN[3] = {0.85, 0.75, 0.75};
-const double FORCED_MAX[3] = {11.15, 1.25, 1.25};
+const double FORCED_MAX[3] = {1.15, 1.25, 1.25};
 const std::array<std::string, FORCED_INDEXES_SIZE> forcedNames = {
     "ENERGÍA", "GRASAS", "PROTEÍNAS"};
 

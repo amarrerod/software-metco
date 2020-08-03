@@ -353,13 +353,13 @@ double MenuPlanning::computeFeasibility() {
 #endif
     }
   }
-  // devolvemos id(S) = did(S) + gid(S)
-  // Y definimos el fitness como ID(S)
-  setFitnessValue(infeasibilityDegree);
+  // El Fitness es un valor a maximizar, por eso le restamos ID(S)
+  setFitnessValue(std::numeric_limits<double>::max() - infeasibilityDegree);
 #ifdef __MPP_FEASIBILITY_DEBUG__
   std::cout << "ID(S) = " << infeasibilityDegree
             << " Fitness Value: " << getFitnessValue() << std::endl;
 #endif
+  // devolvemos id(S) = did(S) + gid(S)
   return infeasibilityDegree;
 }
 

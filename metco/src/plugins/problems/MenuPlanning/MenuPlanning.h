@@ -22,7 +22,7 @@
 #include "Constants.h"
 #include "Individual.h"
 
-//#define __MPP_FEASIBILITY_DEBUG__
+#define __MPP_FEASIBILITY_DEBUG__
 
 char *getcwd(char *buf, size_t size);
 
