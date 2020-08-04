@@ -212,10 +212,13 @@ double MenuPlanning::set_penalizacionVC(vector<int> &gal, vector<bool> galE) {
 /*---------- GENERACION ALEATORIA DE INDIVIDUO -----------*/
 /*--------------------------------------------------------*/
 void MenuPlanning::restart(void) {
-  for (int i = 0; i < nParam; i++)
-    setVar(i, (double)(rand() % (int)getMaximum(i)));
+  for (int i = 0; i < nDias; i++) {
+    setVar(i * num_tipoPlato, rand() % v_primerosPlatos.size());
+    setVar(i * num_tipoPlato + 1, rand() % v_segundosPlatos.size());
+    setVar(i * num_tipoPlato + 2, rand() % v_postres.size());
+  }
 
-  computeFeasibility();
+  // computeFeasibility();
   // repair();
 }
 
@@ -262,6 +265,7 @@ void MenuPlanning::dependentMutation(double pm) {
 
 /**
  * Método que se encarga de calcular la factibilidad de un
+ *
  * individuo con respecto a las restricciones de nutrientes
  *
  * Alejandro Marrero - alu0100825008@ull.edu.es
@@ -420,37 +424,19 @@ void MenuPlanning::evaluate(void) {
   setObj(1, valTotal + feasi);
 }
 
-/*#ifdef __MPP_FEASIBILITY_DEBUG__
+#ifdef __MPP_PRINT_ID_S__
 /**
  * En esta version nos centramos únicamente en mostrar los
  * valores de cada nutriente para comprobar la factiblidad de los
  * individuos resultantes
- *
+ **/
 void MenuPlanning::print(ostream &os) const {
-  os << "========================================" << std::endl;
-  os << "Restricciones diarias" << std::endl;
-  for (unsigned int i = 0; i < nDias; i++) {
-    os << "Día #" << i << std::endl;
-    for (unsigned int j = 0; j < FORCED_INDEXES_SIZE; j++) {
-      os << forcedNames[j] << " = "
-         << forcedRestrictionsID[(i * FORCED_INDEXES_SIZE) + j] << std::endl;
-    }
-    os << "==============" << std::endl;
-  }
-  os << "Restricciones globales" << std::endl;
-  for (unsigned int i = 0; i < num_nutr; i++) {
-    os << "\t- " << ingRNames[i] << " = " << restrictionsID[i] << std::endl;
-  }
-  os << "ID(S) = " << this->infeasibilityDegree << endl;
-  os << "========================================" << std::endl;
-  for (unsigned int i = 0; i < this->getNumberOfVar(); i++)
-    os << this->getVar(i) << " ";
-  for (unsigned int i = 0; i < this->getNumberOfObj(); i++)
-    os << this->getObj(i) << " ";
-
-  os << this->getFitnessValue() << std::endl;
+  for (unsigned int i = 0; i < getNumberOfVar(); i++) os << getVar(i) << " ";
+  os << this->getFeasibility() << " ";
+  for (unsigned int i = 0; i < getNumberOfObj(); i++) os << getObj(i) << " ";
+  os << std::endl;
 }
-#endif */
+#endif
 
 /*----------------------------------------------------------------------*/
 /*---------- METODOS PARA EL CALCULO DEL GRADO DE REPETICION -----------*/
@@ -644,45 +630,15 @@ void MenuPlanning::mostrarPlatos(void) {
   }
 }
 
-/*void MenuPlanning::repair(void) {
+void MenuPlanning::repair(void) {
+  std::cerr << "Reparando MenuPlanning" << std::endl;
   bool mod = false;
-
-  while (!checkInfoN2()) {
+  while (computeFeasibility() != 0.0) {
     for (int i = 0; i < nDias; i++) {
       setVar(i * num_tipoPlato, rand() % v_primerosPlatos.size());
       setVar(i * num_tipoPlato + 1, rand() % v_segundosPlatos.size());
       setVar(i * num_tipoPlato + 2, rand() % v_postres.size());
     }
-    mod = true;
+    evaluate();
   }
-
-  //	if(mod)
-  //		evaluate();
 }
-
-bool MenuPlanning::checkInfoN(const int i) {
-  double aux;
-  for (int j = 0; j < num_nutr; j++) {
-    aux = v_primerosPlatos[getVar(i * num_tipoPlato)].infoN[j] +
-          v_segundosPlatos[getVar(i * num_tipoPlato + 1)].infoN[j] +
-          v_postres[getVar(i * num_tipoPlato + 2)].infoN[j];
-    if (aux < ingRecomendada[j].first || aux > ingRecomendada[j].second)
-      return false;
-  }
-  return true;
-}
-
-bool MenuPlanning::checkInfoN2(void) {
-  double aux;
-  for (int j = 0; j < num_nutr; j++) {
-    aux = 0;
-    for (int i = 0; i < nDias; i++) {
-      aux += v_primerosPlatos[getVar(i * num_tipoPlato)].infoN[j] +
-             v_segundosPlatos[getVar(i * num_tipoPlato + 1)].infoN[j] +
-             v_postres[getVar(i * num_tipoPlato + 2)].infoN[j];
-    }
-    if (aux < ingRecomendada[j].first || aux > ingRecomendada[j].second)
-      return false;
-  }
-  return true;
-}*/

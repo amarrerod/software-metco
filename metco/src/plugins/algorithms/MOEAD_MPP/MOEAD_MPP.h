@@ -29,7 +29,7 @@
 #include "Individual.h"
 #include "MOFront.h"
 
-//#define __MOEAD_MPP_DEBUG__
+#define __MOEAD_MPP_DEBUG__
 
 using namespace std;
 
@@ -43,6 +43,8 @@ class MOEAD_MPP : public EA {
 
   // Describes one iteration of the algorithm
   void runGeneration();
+
+  // void fillPopWithNewIndsAndEvaluate();
 
   // Initialises all data structures and parameters required by the approach
   bool init(const vector<string> &params);
@@ -93,7 +95,7 @@ class MOEAD_MPP : public EA {
   double vioThreshold;
   int thresholdPolicy;
   // Vector which stores the Degree of constraint violation for each individual
-  vector<double> violationDegrees;
+  // vector<double> violationDegrees;
   // Scaling parameters for the Tchebycheff function
   double firstScalingParam;
   double secondScalingParam;
@@ -108,7 +110,7 @@ class MOEAD_MPP : public EA {
   vector<vector<int>> neighbourhood;
 
   // Reference point
-  vector<double> referencePoint;
+  Individual *referencePoint;
 
   // External population
   vector<Individual *> *secondPopulation;
@@ -144,7 +146,7 @@ class MOEAD_MPP : public EA {
   // Tchebycheff approach
   double computingFitnessValue(Individual *ind, vector<double> &lambda);
   // Computes the penalties for each individual of the population
-  void computePenalties();
+  // void computePenalties();
 
   // Sorts neighbour weight vectors in terms of the Euclidean distance
   // between each of them and a particular weight vector in ascending order
@@ -159,6 +161,7 @@ class MOEAD_MPP : public EA {
   const static int ADAPTATIVE_THRESHOLD;
   const static int FIXED_THRESHOLD;
   const static double INITIAL_LINEAR_THRESHOLD;
+  const static int INITIAL_GENERATION;
   const static int NUM_PARAMS;
 };
 

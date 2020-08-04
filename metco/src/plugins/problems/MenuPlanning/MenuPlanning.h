@@ -22,7 +22,8 @@
 #include "Constants.h"
 #include "Individual.h"
 
-#define __MPP_FEASIBILITY_DEBUG__
+//#define __MPP_FEASIBILITY_DEBUG__
+#define __MPP_PRINT_ID_S__
 
 char *getcwd(char *buf, size_t size);
 
@@ -80,10 +81,10 @@ class MenuPlanning : public Individual {
   void set_gruposAl(void);        // Metodo que define los grupos de alimentos
   double computeFeasibility();    // Calcula la factibilidad de los individuos
 
-  //#ifdef __MPP_FEASIBILITY_DEBUG__
+#ifdef __MPP_PRINT_ID_S__
   // Imprime los datos de un individuo MenuPlanning
-  //  virtual void print(std::ostream &os) const;
-  //#endif
+  virtual void print(std::ostream &os) const;
+#endif
 
   // Lectura de ficheros de platos
   void set_Platos(void) {
@@ -107,9 +108,9 @@ class MenuPlanning : public Individual {
   double set_penalizacionVC(vector<int> &gal, vector<bool> galE);
 
   // Comprobar las restricciones del problema
-  // bool checkInfoN(const int i);
-  // bool checkInfoN2(void);
-  // void repair(void); // Metodo de reparacion
+  bool checkInfoN(const int i);
+  bool checkInfoN2(void);
+  void repair(void);  // Metodo de reparacion
 
   // Metodos para el calculo del objetivo de grado de repeticion
   bool gaElegidosPorIteracion(vector<int> vec, int valor);
