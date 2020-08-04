@@ -144,7 +144,7 @@ void MOEAD_MPP::getSolution(MOFront *p) {
  *
  * Buscamos iniciar con la población más factible posible
  **/
-void MOEAD_MPP::fillPopWithNewIndsAndEvaluate() {
+/*void MOEAD_MPP::fillPopWithNewIndsAndEvaluate() {
   double epsilon = .9;
   if (this->getPopulationSize() == -1) {
     cerr << "Warning: fillPopWithNewInds called but pSize has not been "
@@ -167,7 +167,7 @@ void MOEAD_MPP::fillPopWithNewIndsAndEvaluate() {
               << std::endl;
 #endif
   }
-}
+}*/
 
 /**
  * Método que inicializa el punto de referencia que guía la búsqueda.
