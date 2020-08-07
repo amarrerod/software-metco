@@ -39,14 +39,12 @@ MOEAD_MPP::~MOEAD_MPP(void) {
   }
   weightVector.clear();
   delete (referencePoint);
-  //  violationDegrees.clear();
 }
 
 void MOEAD_MPP::runGeneration() {
   if (getGeneration() == INITIAL_GENERATION) {
     initialiseReferencePoint();
   }
-
 // For each individual (subproblem) in the current population
 #ifdef __MOEAD_MPP_DEBUG__
   std::cout << "\t\tGeneration: " << this->getGeneration()
@@ -56,12 +54,6 @@ void MOEAD_MPP::runGeneration() {
     // Creates a new offspring by applying the variation operators
     // LA EVALUACION SE REALIZA TRAS LA CREACION
     Individual *offSpring = createOffspring(i);
-    offSpring->evaluate();
-#ifdef __MOEAD_MPP_DEBUG__
-    std::cout << "Id(individual) = " << (*population)[i]->getFeasibility()
-              << "\t\tId(offspring) = " << offSpring->getFeasibility()
-              << std::endl;
-#endif
     // Updates the state of the algorithm
     updateReferencePoint(offSpring);
     updateNeighbouringSolution(offSpring, i);
@@ -140,57 +132,22 @@ void MOEAD_MPP::getSolution(MOFront *p) {
 }
 
 /**
- * Sobrecarga del metodo que nos permite inicializar la poblacion de individuos
- *
- * Buscamos iniciar con la población más factible posible
- **/
-/*void MOEAD_MPP::fillPopWithNewIndsAndEvaluate() {
-  double epsilon = .9;
-  if (this->getPopulationSize() == -1) {
-    cerr << "Warning: fillPopWithNewInds called but pSize has not been "
-            "fixed. Using default value: 100"
-         << endl;
-    setPopulationSize(100);
-  }
-
-  for (int i = population->size(); i < getPopulationSize(); i++) {
-    Individual *ind = getSampleInd()->internalClone();
-    ind->restart();
-    ind->evaluate();
-    while (abs(ind->getFeasibility() - 0.0) > epsilon) {
-      ind->restart();
-      ind->evaluate();
-    }
-    population->push_back(ind);
-#ifdef __MOEAD_MPP_DEBUG__
-    std::cout << "Ind #" << i << " ID(" << i << ") = " << ind->getFeasibility()
-              << std::endl;
-#endif
-  }
-}*/
-
-/**
  * Método que inicializa el punto de referencia que guía la búsqueda.
  * Se emplea en el cálculo de la función de Tchebycheff *
  */
 void MOEAD_MPP::initialiseReferencePoint() {
-  // Ordenamos por factibilidad y nos quedamos con el mejor
-  std::sort(this->population->begin(), this->population->end(),
-            orderByFeasibility);
+  sort(population->begin(), population->end(), orderByFeasibility);
   referencePoint = (*population)[0]->internalClone();
 
+  // updateReferencePoint(ind);
+  // elete (ind);
+
 #ifdef __MOEAD_MPP_DEBUG__
-  std::cout << "ID" << std::endl;
-  for (unsigned int i = 0; i < getPopulationSize(); i++) {
-    std::cout << (*population)[i]->getFeasibility() << " ";
-  }
-  std::cout << std::endl;
   std::cout << "\t\tInitial Reference Point: (" << referencePoint->getObj(0)
             << "," << referencePoint->getObj(1)
             << ") ID(S) = " << referencePoint->getFeasibility() << std::endl
             << "\t\t=========================================================="
             << std::endl;
-  getchar();
 #endif
 }
 
@@ -295,28 +252,28 @@ void MOEAD_MPP::updateReferencePoint(Individual *ind) {
             << "\t\t========================================================"
             << std::endl;
 #endif
+  bool update = false;
+  const double chances = 0.7;
+
   // Si mejora la factibilidad nos quedamos con este punto de referencia
   if (ind->getFeasibility() < referencePoint->getFeasibility()) {
+    update = true;
+  } else if ((ind->getFeasibility() == referencePoint->getFeasibility()) &&
+             ((rand() / RAND_MAX) < chances)) {
+    update = true;
+  }
+  // Si mejoramos o igualamos el ID actualizamos el RP
+  if (update) {
     for (int i = 0; i < getNumberOfObj(); i++) {
       referencePoint->setObj(i, ind->getObj(i));
     }
-    // Actualizamos ID(referencePoint) = ID(ind)
     referencePoint->setFeasibility(ind->getFeasibility());
   }
-  // Si lo iguala nos quedamos con los mejores objetivos
-  else if (ind->getFeasibility() == referencePoint->getFeasibility()) {
-    for (int i = 0; i < getNumberOfObj(); i++) {
-      if (ind->getInternalOptDirection(i) == MAXIMIZE) {
-        if (ind->getObj(i) > referencePoint->getObj(i)) {
-          referencePoint->setObj(i, ind->getObj(i));
-        }
-      } else if (ind->getInternalOptDirection(i) == MINIMIZE) {
-        if (ind->getObj(i) < referencePoint->getObj(i)) {
-          referencePoint->setObj(i, ind->getObj(i));
-        }
-      }
-    }
-  }
+#ifdef __MOEAD_MPP_DEBUG__
+  std::cout << "New RF ID(RP) = " << referencePoint->getFeasibility() << " ("
+            << referencePoint->getObj(0) << ", " << referencePoint->getObj(1)
+            << ")" << std::endl;
+#endif
 }
 
 /**
@@ -324,10 +281,6 @@ void MOEAD_MPP::updateReferencePoint(Individual *ind) {
  * dominados por el individuo que recibe como parametro
  **/
 void MOEAD_MPP::updateSecondPopulation(Individual *ind) {
-#ifdef __MOEAD_MPP_DEBUG__
-  std::cout << "\t\tUpdating Second Population" << std::endl
-            << "\t\t=============================================" << std::endl;
-#endif
   unsigned int i = 0;
   // Removes from the external population all those individuals dominated by
   // individual ind
@@ -394,6 +347,10 @@ void MOEAD_MPP::updateNeighbouringSolution(Individual *offspring,
       // violationDegrees[id] = offSpringVioDegree;
     }
   }
+#ifdef __MOEAD_MPP_DEBUG__
+  std::cout << "\t\tUpdating Neighouring Solutions DONE!" << std::endl
+            << "\t\t=================================" << std::endl;
+#endif
 }
 
 /**
@@ -404,8 +361,8 @@ void MOEAD_MPP::updateNeighbouringSolution(Individual *offspring,
  **/
 double MOEAD_MPP::computingFitnessValue(Individual *ind,
                                         vector<double> &lambda) {
-  double fitness = DBL_MIN;
-  double scaleFactor = 0.0;
+  double fitness = std::numeric_limits<double>::min();
+  // double scaleFactor = 0.0;
   // Calculamos el factor de escalado en funcion del grado de violacion de las
   // restricciones
   /*if (violationDegree < vioThreshold) {

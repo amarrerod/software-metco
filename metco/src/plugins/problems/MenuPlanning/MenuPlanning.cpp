@@ -225,13 +225,7 @@ void MenuPlanning::restart(void) {
 /**
  * Clonacion del individuo
  **/
-Individual *MenuPlanning::clone(void) const {
-  // MenuPlanning *mpp = new MenuPlanning();
-  // mpp->infeasibilityDegree = this->infeasibilityDegree;
-  // mpp->restrictionsID = {this->restrictionsID};
-  // mpp->forcedRestrictionsID = {this->forcedRestrictionsID};
-  return new MenuPlanning();
-}
+Individual *MenuPlanning::clone(void) const { return new MenuPlanning(); }
 
 /*----------------------------------------*/
 /*---------- OPERADOR DE CRUCE -----------*/
@@ -420,8 +414,8 @@ void MenuPlanning::evaluate(void) {
   // Asignamos el valor de los objetivos
   double feasi = computeFeasibility();
   setFeasibility(feasi);
-  setObj(0, precioTotal + feasi);
-  setObj(1, valTotal + feasi);
+  setObj(0, precioTotal);
+  setObj(1, valTotal);
 }
 
 #ifdef __MPP_PRINT_ID_S__

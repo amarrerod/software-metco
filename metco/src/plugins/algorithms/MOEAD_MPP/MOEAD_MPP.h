@@ -44,8 +44,6 @@ class MOEAD_MPP : public EA {
   // Describes one iteration of the algorithm
   void runGeneration();
 
-  // void fillPopWithNewIndsAndEvaluate();
-
   // Initialises all data structures and parameters required by the approach
   bool init(const vector<string> &params);
 
