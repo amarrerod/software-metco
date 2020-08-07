@@ -253,12 +253,15 @@ void MOEAD_MPP::updateReferencePoint(Individual *ind) {
             << std::endl;
 #endif
   bool update = false;
+  const double epsilon = 0.0001;
   const double chances = 0.7;
 
   // Si mejora la factibilidad nos quedamos con este punto de referencia
   if (ind->getFeasibility() < referencePoint->getFeasibility()) {
     update = true;
-  } else if ((ind->getFeasibility() == referencePoint->getFeasibility()) &&
+    // En caso de igualar ID lo cambiamos con cierta probabilidad
+  } else if ((abs(ind->getFeasibility() - referencePoint->getFeasibility()) <
+              epsilon) &&
              ((rand() / RAND_MAX) < chances)) {
     update = true;
   }
@@ -282,12 +285,23 @@ void MOEAD_MPP::updateReferencePoint(Individual *ind) {
  **/
 void MOEAD_MPP::updateSecondPopulation(Individual *ind) {
   unsigned int i = 0;
+  const double epsilon = 0.0001;
   // Removes from the external population all those individuals dominated by
   // individual ind
   while (i < secondPopulation->size()) {
     // Primero comprobamos la factibilidad
-    if ((ind->getFeasibility() <= (*secondPopulation)[i]->getFeasibility()) &&
-        (dominanceTest((*secondPopulation)[i], ind) == SECOND_DOMINATES)) {
+    bool remove = false;
+    if (ind->getFeasibility() < (*secondPopulation)[i]->getFeasibility()) {
+      remove = true;
+      // En caso de igualar comprobamos que lo domina
+    } else if ((abs(ind->getFeasibility() -
+                    (*secondPopulation)[i]->getFeasibility()) < epsilon) &&
+               (dominanceTest((*secondPopulation)[i], ind) ==
+                SECOND_DOMINATES)) {
+      remove = true;
+    }
+    // Eliminamos si procede
+    if (remove) {
       delete ((*secondPopulation)[i]);
       (*secondPopulation)[i] =
           (*secondPopulation)[secondPopulation->size() - 1];
@@ -301,8 +315,13 @@ void MOEAD_MPP::updateSecondPopulation(Individual *ind) {
   bool insert = true;
   i = 0;
   while (i < secondPopulation->size()) {
-    if (((*secondPopulation)[i]->getFeasibility() <= ind->getFeasibility() &&
-         (dominanceTest((*secondPopulation)[i], ind) == FIRST_DOMINATES))) {
+    if ((*secondPopulation)[i]->getFeasibility() < ind->getFeasibility()) {
+      insert = false;
+      break;
+    } else if ((abs(ind->getFeasibility() -
+                    (*secondPopulation)[i]->getFeasibility()) < epsilon) &&
+               (dominanceTest((*secondPopulation)[i], ind) ==
+                FIRST_DOMINATES)) {
       insert = false;
       break;
     }
@@ -330,21 +349,23 @@ void MOEAD_MPP::updateNeighbouringSolution(Individual *offspring,
     double f2 = computingFitnessValue((*population)[id], weightVector[id]);
 
 #ifdef __MOEAD_MPP_DEBUG__
-    std::cout << "Id(offspring): " << offspring->getFeasibility()
-              << " F: " << f1
-              << "\tId(Ni): " << (*population)[id]->getFeasibility()
+    std::cout << "Id(OS): " << offspring->getFeasibility() << " F: " << f1
+              << "\tId(Nij): " << (*population)[id]->getFeasibility()
               << " F: " << f2 << std::endl;
 #endif
-
+    bool update = false;
     // First check if its feasibility
-    if ((offspring->getFeasibility() <= (*population)[id]->getFeasibility()) &&
-        (f1 <= f2)) {
-      // if the offspring is better than the neighbour, then update the
-      // neighbour
+    if (offspring->getFeasibility() < (*population)[id]->getFeasibility()) {
+      update = true;
+    } else if ((offspring->getFeasibility() <=
+                (*population)[id]->getFeasibility()) &&
+               (f1 <= f2)) {
+      update = true;
+    }
+
+    if (update) {
       delete ((*population)[id]);
       (*population)[id] = offspring->internalClone();
-      // Actualizamos las penalizaciones del vecino con las del offSpring
-      // violationDegrees[id] = offSpringVioDegree;
     }
   }
 #ifdef __MOEAD_MPP_DEBUG__
