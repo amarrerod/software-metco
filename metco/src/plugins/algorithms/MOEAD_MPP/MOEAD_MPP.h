@@ -77,8 +77,6 @@ class MOEAD_MPP : public EA {
   inline void setMutationRate(const double &pm) { this->pm = pm; }
 
  private:
-  // Private attributes:
-
   // Crossover and mutation rates
   double pc, pm;
 
@@ -86,17 +84,6 @@ class MOEAD_MPP : public EA {
   unsigned int numberSubProblems;
   unsigned int neighbourhoodSize = 10;
   unsigned int numberOfObj;
-
-  // Degree of constraint violation
-  double minConstViolation;
-  double maxConstViolation;
-  double vioThreshold;
-  int thresholdPolicy;
-  // Vector which stores the Degree of constraint violation for each individual
-  // vector<double> violationDegrees;
-  // Scaling parameters for the Tchebycheff function
-  double firstScalingParam;
-  double secondScalingParam;
 
   // Weight vectors input file name
   string fileName;
@@ -128,7 +115,7 @@ class MOEAD_MPP : public EA {
   void initialisePopulation();
 
   // Generate an offsprings
-  Individual *createOffspring(const int &i);
+  Individual *createOffspring(const int &i, const bool &);
 
   // Updates the reference point
   void updateReferencePoint(Individual *ind);
@@ -138,14 +125,21 @@ class MOEAD_MPP : public EA {
 
   // Compares a novel offspring to its neighboring solutions in order to update
   // the neighbourhood
-  void updateNeighbouringSolution(Individual *ind, const int &i);
+  void updateNeighbouringSolution(Individual *ind, const int &i, const double &,
+                                  const bool &);
 
   // Computes the fitness value of a particular individual by considering the
   // Tchebycheff approach
-  double computingFitnessValue(Individual *ind, vector<double> &lambda);
-  // Computes the penalties for each individual of the population
-  // void computePenalties();
+  double computingFitnessValue(Individual *ind, vector<double> &lambda,
+                               const double &);
 
+  void computeIDRanges(double &minIDS, double &maxIDS);
+
+  // Iterated Local Search ILS
+  void localSearch();
+
+  // Survival Selection Technique Based on BNP - MPP CEC 2019
+  void survivorSelectionBNP();
   // Sorts neighbour weight vectors in terms of the Euclidean distance
   // between each of them and a particular weight vector in ascending order
   void minFastSort(vector<double> &dist, vector<int> &indx,
@@ -155,10 +149,6 @@ class MOEAD_MPP : public EA {
   double getEuclideanDistance(vector<double> weightA, vector<double> weightB);
 
  private:
-  const static int LINEAR_THRESHOLD;
-  const static int ADAPTATIVE_THRESHOLD;
-  const static int FIXED_THRESHOLD;
-  const static double INITIAL_LINEAR_THRESHOLD;
   const static int INITIAL_GENERATION;
   const static int NUM_PARAMS;
 };

@@ -213,13 +213,11 @@ double MenuPlanning::set_penalizacionVC(vector<int> &gal, vector<bool> galE) {
 /*--------------------------------------------------------*/
 void MenuPlanning::restart(void) {
   for (int i = 0; i < nDias; i++) {
-    setVar(i * num_tipoPlato, rand() % v_primerosPlatos.size());
-    setVar(i * num_tipoPlato + 1, rand() % v_segundosPlatos.size());
-    setVar(i * num_tipoPlato + 2, rand() % v_postres.size());
+    for (int j = 0; j < 3; j++) {
+      setVar(i * 3 + j, random() % NPLATOS[j]);
+    }
   }
-
-  // computeFeasibility();
-  // repair();
+  evaluate();
 }
 
 /**
@@ -231,11 +229,95 @@ Individual *MenuPlanning::clone(void) const { return new MenuPlanning(); }
 /*---------- OPERADOR DE CRUCE -----------*/
 /*----------------------------------------*/
 void MenuPlanning::dependentCrossover(Individual *ind) {
-  crossover_uniform(ind);
-  double fs = computeFeasibility();
+  // uniformCrossover(ind);
+  pairBasedCrossover(ind);
+}
 
-  // ((MenuPlanning *)ind)->repair();
-  // repair();
+/**
+ * Uniform Crossover Based on MPP CEC 2019
+ *
+ **/
+void MenuPlanning::uniformCrossover(Individual *ind2) {
+  for (int i = 0; i < nDias; i++) {
+    if (rand() > (RAND_MAX / 2)) {
+      double vIdx = var[i * 3];
+      double vIdx1 = var[i * 3 + 1];
+      double vIdx2 = var[i * 3 + 2];
+      this->var[i * 3] = ind2->getVar(i * 3);
+      this->var[i * 3 + 1] = ind2->getVar(i * 3 + 1);
+      this->var[i * 3 + 2] = ind2->getVar(i * 3 + 2);
+      ind2->setVar(i * 3, vIdx);
+      ind2->setVar(i * 3 + 1, vIdx1);
+      ind2->setVar(i * 3 + 2, vIdx2);
+    }
+  }
+}
+
+/**
+ * Pair Based Crossover basado en CEC 2019
+ *
+ */
+void MenuPlanning::pairBasedCrossover(Individual *i2) {
+  vector<Food> pendingI1, pendingI2;
+
+  map<Food, int> f1;
+  int dist = 0;
+  for (int i = 0; i < nDias; i++) {
+    Food f;
+    f.p1 = round(getVar(i * 3));
+    f.p2 = round(getVar(i * 3 + 1));
+    f.p3 = round(getVar(i * 3 + 2));
+    f1[f]++;
+  }
+
+  int fixed = 0;
+  for (int i = 0; i < nDias; i++) {
+    Food f;
+    f.p1 = round(i2->getVar(i * 3));
+    f.p2 = round(i2->getVar(i * 3 + 1));
+    f.p3 = round(i2->getVar(i * 3 + 2));
+    if (f1.count(f)) {  // Comida en ambos
+      setVar(fixed * 3, f.p1);
+      setVar(fixed * 3 + 1, f.p2);
+      setVar(fixed * 3 + 2, f.p3);
+      i2->setVar(fixed * 3, f.p1);
+      i2->setVar(fixed * 3 + 1, f.p2);
+      i2->setVar(fixed * 3 + 2, f.p3);
+      fixed++;
+      f1[f]--;
+      if (f1[f] == 0) {
+        f1.erase(f);
+      }
+    } else {
+      pendingI2.push_back(f);
+      dist++;
+    }
+  }
+  for (map<Food, int>::iterator it = f1.begin(); it != f1.end(); it++) {
+    for (int j = 0; j < it->second; j++) {
+      pendingI1.push_back(it->first);
+    }
+  }
+  if (pendingI1.size() != pendingI2.size()) {
+    cerr << "Error interno. PendingI1 != PendingI2" << endl;
+    exit(-1);
+  }
+  random_shuffle(pendingI1.begin(), pendingI1.end());
+  int next = nDias - pendingI1.size();
+  for (int i = 0; i < pendingI1.size(); i++) {
+    Food f1 = pendingI1[i];
+    Food f2 = pendingI2[i];
+    if (rand() < RAND_MAX / 2.0) {
+      swap(f1, f2);
+    }
+    setVar(next * 3, f1.p1);
+    setVar(next * 3 + 1, f1.p2);
+    setVar(next * 3 + 2, f1.p3);
+    i2->setVar(next * 3, f2.p1);
+    i2->setVar(next * 3 + 1, f2.p2);
+    i2->setVar(next * 3 + 2, f2.p3);
+    next++;
+  }
 }
 
 /*-------------------------------------------*/
@@ -253,7 +335,10 @@ void MenuPlanning::dependentMutation(double pm) {
       mod = true;
     }
   }
-  if (mod) computeFeasibility();
+  if (mod) {
+    double id = computeFeasibility();
+    this->setFeasibility(id);
+  }
   // if (mod) repair();
 }
 
@@ -315,9 +400,6 @@ double MenuPlanning::computeFeasibility() {
     }
   }
   infeasibilityDegree = infeasibilityDegree * 1e12;
-#ifdef __MPP_FEASIBILITY_DEBUG__
-  std::cout << "ID(S) = " << infeasibilityDegree << std::endl;
-#endif
   // devolvemos id(S) = did(S) + gid(S)
   return infeasibilityDegree;
 }
@@ -412,8 +494,8 @@ void MenuPlanning::evaluate(void) {
   ultimos5GA.clear();
   gaElegidosAnterior.clear();
   // Asignamos el valor de los objetivos
-  double feasi = computeFeasibility();
-  setFeasibility(feasi);
+  double idS = computeFeasibility();
+  setFeasibility(idS);
   setObj(0, precioTotal);
   setObj(1, valTotal);
 }
@@ -621,18 +703,5 @@ void MenuPlanning::mostrarPlatos(void) {
       cout << "\n- " << v_postres[i].inc[x];
     }
     cin.get();
-  }
-}
-
-void MenuPlanning::repair(void) {
-  std::cerr << "Reparando MenuPlanning" << std::endl;
-  bool mod = false;
-  while (computeFeasibility() != 0.0) {
-    for (int i = 0; i < nDias; i++) {
-      setVar(i * num_tipoPlato, rand() % v_primerosPlatos.size());
-      setVar(i * num_tipoPlato + 1, rand() % v_segundosPlatos.size());
-      setVar(i * num_tipoPlato + 2, rand() % v_postres.size());
-    }
-    evaluate();
   }
 }

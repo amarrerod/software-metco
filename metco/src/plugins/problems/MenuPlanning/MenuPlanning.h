@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdlib>
 #include <fstream>
@@ -22,7 +23,7 @@
 #include "Constants.h"
 #include "Individual.h"
 
-//#define __MPP_FEASIBILITY_DEBUG__
+#define __MPP_FEASIBILITY_DEBUG__
 #define __MPP_PRINT_ID_S__
 
 char *getcwd(char *buf, size_t size);
@@ -45,14 +46,19 @@ struct infoPlatos {
   vector<string> inc;    // Incompatibilidades alimenticias del plato
 };
 
+/**
+ * Struct empleada en el PairBasedCrossover
+ **/
+struct Food {
+  int p1, p2, p3;
+  bool operator<(const Food &i2) const {
+    return (make_pair(p1, make_pair(p2, p3)) <
+            make_pair(i2.p1, make_pair(i2.p2, i2.p3)));
+  }
+};
+
 class MenuPlanning : public Individual {
  private:
-  // Grado de Infactibilidad ID(S)
-  // double infeasibilityDegree;
-  // Grado de infactibilidad por cada restriccion
-  // array<double, num_nutr> restrictionsID;
-  //  vector<double> forcedRestrictionsID;
-
   // Variables comunes a todas las instancias de MenuPlanning
   static int nDias;   // Numero de dias que tenemos que planificar
   static int nParam;  // Numero de parametos = nDias * 3
@@ -80,6 +86,10 @@ class MenuPlanning : public Individual {
   void restart(void);             // Generacion aleatoria del individuos
   void set_gruposAl(void);        // Metodo que define los grupos de alimentos
   double computeFeasibility();    // Calcula la factibilidad de los individuos
+
+  // Operadores de cruce para MPP basados en MPP CEC 2019
+  void uniformCrossover(Individual *ind2);
+  void pairBasedCrossover(Individual *ind2);
 
 #ifdef __MPP_PRINT_ID_S__
   // Imprime los datos de un individuo MenuPlanning
@@ -110,7 +120,6 @@ class MenuPlanning : public Individual {
   // Comprobar las restricciones del problema
   bool checkInfoN(const int i);
   bool checkInfoN2(void);
-  void repair(void);  // Metodo de reparacion
 
   // Metodos para el calculo del objetivo de grado de repeticion
   bool gaElegidosPorIteracion(vector<int> vec, int valor);

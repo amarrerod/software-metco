@@ -330,7 +330,7 @@ class Individual : public Plugin {
 
   virtual unsigned int getOptDirection(const int i) const = 0;
 
- private:
+ protected:
   // Operador de clonaci�n: debe ser reimplementado en la clase hija
   virtual Individual *clone(void) const = 0;
   vector<MultiObjectivization *> multiObjectivizationsPlugins;
@@ -338,10 +338,8 @@ class Individual : public Plugin {
   // Genetic operators to implement
   virtual void dependentMutation(double pm);
   virtual void dependentCrossover(Individual *ind);
-
   // genes
   vector<double> var;
-
   // objetivos
   vector<long double> obj;
 
