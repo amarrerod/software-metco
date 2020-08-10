@@ -470,6 +470,8 @@ void Individual::restart(void) {
   }
 }
 
+void Individual::localSearch() {}
+
 /**
  * 	Metodo de reparacion de individuos
  * 	Añadido por Alejandro Marrero - 2019

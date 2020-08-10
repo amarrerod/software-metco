@@ -30,8 +30,8 @@ int MenuPlanning::nParam;
 vector<infoPlatos> MenuPlanning::v_primerosPlatos;
 vector<infoPlatos> MenuPlanning::v_segundosPlatos;
 vector<infoPlatos> MenuPlanning::v_postres;
-vector<pair<int, int> > MenuPlanning::gruposAl;
-vector<vector<vector<double> > > MenuPlanning::v3_compatibilidadPlatos;
+vector<pair<int, int>> MenuPlanning::gruposAl;
+vector<vector<vector<double>>> MenuPlanning::v3_compatibilidadPlatos;
 vector<string> MenuPlanning::alergenosPlan;
 vector<string> MenuPlanning::incompatibilidadesPlan;
 vector<int> MenuPlanning::gruposAlPlan;
@@ -147,7 +147,7 @@ void MenuPlanning::set_vectorCompatibilidad(void) {
   // Vector de postres
   vector<double> sz(v_postres.size(), 0.0);
   // Plano de postres y segundos platos
-  vector<vector<double> > sz2(v_segundosPlatos.size(), sz);
+  vector<vector<double>> sz2(v_segundosPlatos.size(), sz);
   // Prisma rectangular de primeros, segundos platos y postres
   v3_compatibilidadPlatos.assign(v_primerosPlatos.size(), sz2);
   vector<bool> gaElegidos;
@@ -212,18 +212,28 @@ double MenuPlanning::set_penalizacionVC(vector<int> &gal, vector<bool> galE) {
 /*---------- GENERACION ALEATORIA DE INDIVIDUO -----------*/
 /*--------------------------------------------------------*/
 void MenuPlanning::restart(void) {
+#ifdef __MPP_FEASIBILITY_DEBUG__
+  std::cout << "Restart" << std::endl;
+#endif
   for (int i = 0; i < nDias; i++) {
     for (int j = 0; j < 3; j++) {
       setVar(i * 3 + j, random() % NPLATOS[j]);
     }
   }
   evaluate();
+  // localSearch();
 }
 
 /**
  * Clonacion del individuo
  **/
-Individual *MenuPlanning::clone(void) const { return new MenuPlanning(); }
+Individual *MenuPlanning::clone(void) const {
+  MenuPlanning *mpp = new MenuPlanning();
+  mpp->badDays = {badDays};
+  mpp->heaviestNut = heaviestNut;
+  mpp->heaviestType = heaviestType;
+  return mpp;
+}
 
 /*----------------------------------------*/
 /*---------- OPERADOR DE CRUCE -----------*/
@@ -255,7 +265,6 @@ void MenuPlanning::uniformCrossover(Individual *ind2) {
 
 /**
  * Pair Based Crossover basado en CEC 2019
- *
  */
 void MenuPlanning::pairBasedCrossover(Individual *i2) {
   vector<Food> pendingI1, pendingI2;
@@ -320,6 +329,127 @@ void MenuPlanning::pairBasedCrossover(Individual *i2) {
   }
 }
 
+/**
+ * ILS Basada en MPP CEC 2019
+ *
+ **/
+void MenuPlanning::localSearch() {
+#ifdef __MPP_ILS_DEBUG__
+  std::cout << "Running LocalSearch" << std::endl;
+#endif
+  vector<Neighbor> neighbors;
+  for (int i = 0; i < nDias; i++) {
+    for (int j = 0; j < 3; j++) {
+      for (int k = 0; k < NPLATOS[j]; k++) {
+        Neighbor n;
+        n.variable = i * 3 + j;
+        n.newValue = k;
+        neighbors.push_back(n);
+      }
+    }
+  }
+#ifdef __MPP_ILS_DEBUG__
+  std::cout << "Neighbours done!" << std::endl;
+#endif
+  vector<double> bestIndividual = {var};
+  evaluate();
+  std::tuple<double, double, double> bestResult =
+      make_tuple(getFeasibility(), getObj(0), getObj(1));
+  const int maxIterations = 100;
+#ifdef __MPP_ILS_DEBUG__
+  std::cout << "Before Loop!" << std::endl;
+#endif
+  for (int i = 0; i < maxIterations; i++) {
+    std::cout << "Iteration #" << i << std::endl;
+    evaluate();
+    tuple<double, double, double> currentResult =
+        make_tuple(getFeasibility(), getObj(0), getObj(1));
+    bool improved = true;
+    while (improved) {
+      improved = false;
+      random_shuffle(neighbors.begin(), neighbors.end());
+      for (int i = 0; i < neighbors.size(); i++) {
+        int currentValue = var[neighbors[i].variable];
+        var[neighbors[i].variable] = neighbors[i].newValue;
+        evaluate();
+        tuple<double, double, double> newResult =
+            make_tuple(getFeasibility(), getObj(0), getObj(1));
+        if (newResult >= currentResult) {
+          var[neighbors[i].variable] = currentValue;
+        } else {
+          improved = true;
+          currentResult = newResult;
+        }
+      }
+    }
+    std::cout << "While done" << std::endl;
+    if (currentResult >= bestResult) {
+      var = {bestIndividual};
+    } else {
+      bestResult = currentResult;
+      bestIndividual = {var};
+    }
+
+    evaluate();
+    if (badDays.size() == 0) {
+#ifdef __MPP_ILS_DEBUG__
+      std::cout << "BadDays  == 0 !" << std::endl;
+#endif
+      if (heaviestNut != -1) {
+        std::cout << "BadDAys if" << std::endl;
+        vector<pair<double, int>> infoNut;
+        for (int i = 0; i < nDias; i++) {
+          std::cout << "BadDays for" << std::endl;
+          double total = v_primerosPlatos[var[i * 3]].infoN[heaviestNut] +
+                         v_segundosPlatos[var[i * 3 + 1]].infoN[heaviestNut] +
+                         v_postres[var[i * 3 + 2]].infoN[heaviestNut];
+          infoNut.push_back(make_pair(total, i));
+        }
+        std::cout << "BadDays for done" << std::endl;
+        sort(infoNut.begin(), infoNut.end());
+        std::cout << "BadDays sort done" << std::endl;
+
+        if (heaviestType == 1) {
+          std::cout << "BadDays to reverse" << std::endl;
+
+          reverse(infoNut.begin(), infoNut.end());
+          std::cout << "BadDays reverse done" << std::endl;
+        }
+        int selectedDay = infoNut[random() % 6].second;
+        var[selectedDay * 3] = (rand() % NPLATOS[0]);
+        var[selectedDay * 3 + 1] = (rand() % NPLATOS[1]);
+        var[selectedDay * 3 + 2] = (rand() % NPLATOS[2]);
+        std::cout << "BadDays if done" << std::endl;
+        infoNut.clear();
+      } else {
+        int selectedDay = random() % nDias;
+        var[selectedDay * 3] = (rand() % NPLATOS[0]);
+        var[selectedDay * 3 + 1] = (rand() % NPLATOS[1]);
+        var[selectedDay * 3 + 2] = (rand() % NPLATOS[2]);
+      }
+#ifdef __MPP_ILS_DEBUG__
+      std::cout << "BadDays  == 0 DONE!" << std::endl;
+#endif
+    } else {
+      for (int i = 0; i < badDays.size(); i++) {
+        int day = badDays[i];
+        int which = random() % 3;
+        var[day * 3 + which] = (rand() % NPLATOS[which]);
+      }
+    }
+  }
+#ifdef __MPP_ILS_DEBUG__
+  std::cout << "Loop Done!" << std::endl;
+#endif
+
+  var = {bestIndividual};
+  evaluate();
+
+#ifdef __MPP_ILS_DEBUG__
+  std::cout << "Evaluate done. ILS finished" << std::endl;
+#endif
+}
+
 /*-------------------------------------------*/
 /*---------- OPERADOR DE MUTACION -----------*/
 /*-------------------------------------------*/
@@ -335,10 +465,6 @@ void MenuPlanning::dependentMutation(double pm) {
       mod = true;
     }
   }
-  if (mod) {
-    double id = computeFeasibility();
-    this->setFeasibility(id);
-  }
   // if (mod) repair();
 }
 
@@ -350,10 +476,10 @@ void MenuPlanning::dependentMutation(double pm) {
  * Alejandro Marrero - alu0100825008@ull.edu.es
  **/
 double MenuPlanning::computeFeasibility() {
-  double infeasibilityDegree = 0.0;
+  feasibility = 0.0;
   std::array<double, num_nutr> infoNPlan;
   infoNPlan.fill(0.0);
-
+  badDays.clear();
   // Bucle para calcular did(S)
   for (int i = 0; i < nDias; i++) {
     int idx = i * num_tipoPlato;
@@ -371,37 +497,53 @@ double MenuPlanning::computeFeasibility() {
     for (int j = 0; j < FORCED_INDEXES_SIZE; j++) {
       int index = FORCED_INDEXES[j];
       if (dayNutr[index] < ingR[index] * FORCED_MIN[j]) {
-        infeasibilityDegree +=
+        feasibility +=
             pow((ingR[index] * FORCED_MIN[j] - dayNutr[index]) / ingR[index],
                 2) *
             1000000.0;
+        badDays.push_back(i);
 
       } else if (dayNutr[index] > ingR[index] * FORCED_MAX[j]) {
-        infeasibilityDegree +=
+        feasibility +=
             pow((dayNutr[index] - ingR[index] * FORCED_MAX[j]) / ingR[index],
                 2) *
             1000000.0;
+        badDays.push_back(i);
       }
     }
   }
-
+  double heaviestValue = 0.0;
+  heaviestNut = -1;
   // Ahora calculamos los nutrientes globales del plan gid(S)
   for (unsigned int i = 0; i < num_nutr; i++) {
     if ((i == CALCIUM_INDEX) || (i == POTASIUM_INDEX) || (i == IRON_INDEX))
       continue;
     if (infoNPlan[i] < (ingR[i] * minReq[i] * nDias)) {
-      infeasibilityDegree = pow(
+      double value = pow(
           (ingR[i] * minReq[i] * nDias - infoNPlan[i]) / (ingR[i] * nDias), 2);
-      if (infoNPlan[i] > (ingR[i] * maxReq[i] * nDias)) {
-        infeasibilityDegree = pow(
-            (infoNPlan[i] - ingR[i] * maxReq[i] * nDias) / (ingR[i] * nDias),
-            2);
+      feasibility += value;
+      if (value > heaviestValue) {
+        heaviestValue = value;
+        heaviestNut = i;
+        heaviestType = -1;
+      }
+    }
+    if (infoNPlan[i] > (ingR[i] * maxReq[i] * nDias)) {
+      double value = pow(
+          (infoNPlan[i] - ingR[i] * maxReq[i] * nDias) / (ingR[i] * nDias), 2);
+      feasibility += value;
+      if (value > heaviestValue) {
+        heaviestValue = value;
+        heaviestNut = i;
+        heaviestType = 1;
       }
     }
   }
-  infeasibilityDegree = infeasibilityDegree * 1e12;
+
+  feasibility = feasibility * 1e12;
+
   // devolvemos id(S) = did(S) + gid(S)
-  return infeasibilityDegree;
+  return feasibility;
 }
 
 /**
@@ -423,7 +565,7 @@ void MenuPlanning::evaluate(void) {
   vector<int> gaElegidos;
   // Vector que guarda los ga pertenecientes al menu de la iteracion anterior
   vector<int> gaElegidosAnterior;
-  vector<vector<int> > ultimos5GA;
+  vector<vector<int>> ultimos5GA;
   int x = 0;
 
   for (int i = 0; i < nDias; i++) {
@@ -494,8 +636,7 @@ void MenuPlanning::evaluate(void) {
   ultimos5GA.clear();
   gaElegidosAnterior.clear();
   // Asignamos el valor de los objetivos
-  double idS = computeFeasibility();
-  setFeasibility(idS);
+  computeFeasibility();
   setObj(0, precioTotal);
   setObj(1, valTotal);
 }
@@ -581,7 +722,7 @@ void MenuPlanning::sumValorGA(void) {
 
 // METODO PARA ANIADIR LOS GA DE UN DIA EN EL VECTOR DE GAS DE LOS ULTIMOS 5
 // DIAS
-void MenuPlanning::set_ultimos5GA(vector<vector<int> > &ultimos5GA,
+void MenuPlanning::set_ultimos5GA(vector<vector<int>> &ultimos5GA,
                                   vector<int> vec) {
   if (ultimos5GA.size() < 5)
     ultimos5GA.push_back(vec);
@@ -592,7 +733,7 @@ void MenuPlanning::set_ultimos5GA(vector<vector<int> > &ultimos5GA,
 }
 
 double MenuPlanning::set_ValorGAFirstAlternativa(
-    vector<vector<int> > &ultimos5GA, vector<int> vec) {
+    vector<vector<int>> &ultimos5GA, vector<int> vec) {
   /* 0 Otros, 1 Carne, 2 Cereal, 3 Fruta, 4 Lacteo, 5 Legumbre, 6 Marisco, 7
    * Pasta, 8 Pescado, 9 Verdura */
   double penalizacionPorGA[10] = {penalizaciones[0], penalizaciones[1],

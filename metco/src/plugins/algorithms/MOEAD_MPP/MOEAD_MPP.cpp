@@ -91,10 +91,6 @@ bool MOEAD_MPP::init(const vector<string> &params) {
     cerr << "Weight vectors file name" << endl;
     cerr << "Mutation rate pm" << endl;
     cerr << "Crossover rate pc" << endl;
-    /*  cerr << "Threshold policy: " << endl;
-      cerr << "\t- 0 = Linear" << endl;
-      cerr << "\t- 1 = Adaptative" << endl;
-      cerr << "\t- 2 = Fixed + value" << endl;*/
     return false;
   }
 
@@ -109,21 +105,6 @@ bool MOEAD_MPP::init(const vector<string> &params) {
   initialiseReferencePoint();
   initialiseWeightVector();
   initialiseNeighbourhood();
-  // Initialisation of the degree violation vector
-  /*violationDegrees.resize(getPopulationSize(),
-                          std::numeric_limits<double>::max());
-  // Gestion de las restricciones
-  thresholdPolicy = atoi(params[5].c_str());
-  // Si es fijo lo definimos al inicio y no cambiamos
-  if (thresholdPolicy == FIXED_THRESHOLD) {
-    if (params.size() != (NUM_PARAMS + 1)) {
-      return false;
-    } else {
-      vioThreshold = atof(params[6].c_str());
-    }
-  } else if (thresholdPolicy == LINEAR_THRESHOLD) {
-    vioThreshold = INITIAL_LINEAR_THRESHOLD;
-  }*/
   return true;
 }
 

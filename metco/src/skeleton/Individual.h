@@ -306,6 +306,7 @@ class Individual : public Plugin {
   // Inicializacion aleatoria de un individuo
   virtual void restart(void);
 
+  virtual void localSearch(void);
   // Codigo llamado tras cada generacion
   virtual void generationCode() const {}
 

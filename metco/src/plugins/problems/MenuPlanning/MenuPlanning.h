@@ -18,12 +18,14 @@
 #include <limits>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "Constants.h"
 #include "Individual.h"
 
 #define __MPP_FEASIBILITY_DEBUG__
+#define __MPP_ILS_DEBUG__
 #define __MPP_PRINT_ID_S__
 
 char *getcwd(char *buf, size_t size);
@@ -57,6 +59,14 @@ struct Food {
   }
 };
 
+/**
+ * Struct para definir Vecinos del MPP CEC 2019
+ **/
+struct Neighbor {
+  int variable;
+  int newValue;
+};
+
 class MenuPlanning : public Individual {
  private:
   // Variables comunes a todas las instancias de MenuPlanning
@@ -72,6 +82,11 @@ class MenuPlanning : public Individual {
   static vector<string> incompatibilidadesPlan;  // Incomptabilidades del plan
   static vector<int> gruposAlPlan;  // Grupos de alimentos en el plan
   static vector<double> infoNPlan;  // Informacion Nutrional del plan
+
+  // Variables empleadas en CEC 2019 para gestionar ID(S) y ILS
+  vector<int> badDays;
+  double heaviestNut;
+  double heaviestType;
 
   void dependentCrossover(Individual *ind);  // Operadro de cruce especifico
   void dependentMutation(double pm);         // Operador de mutacion específico
@@ -90,6 +105,8 @@ class MenuPlanning : public Individual {
   // Operadores de cruce para MPP basados en MPP CEC 2019
   void uniformCrossover(Individual *ind2);
   void pairBasedCrossover(Individual *ind2);
+  // Búsqueda Local HillClimbing basada en MPP CEC 2019
+  virtual void localSearch();
 
 #ifdef __MPP_PRINT_ID_S__
   // Imprime los datos de un individuo MenuPlanning
