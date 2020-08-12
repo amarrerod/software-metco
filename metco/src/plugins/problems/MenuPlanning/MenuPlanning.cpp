@@ -213,9 +213,6 @@ double MenuPlanning::set_penalizacionVC(vector<int> &gal, vector<bool> galE) {
 /*---------- GENERACION ALEATORIA DE INDIVIDUO -----------*/
 /*--------------------------------------------------------*/
 void MenuPlanning::restart(void) {
-#ifdef __MPP_FEASIBILITY_DEBUG__
-  std::cout << "Restart" << std::endl;
-#endif
   for (int i = 0; i < nDias; i++) {
     for (int j = 0; j < 3; j++) {
       setVar(i * 3 + j, random() % NPLATOS[j]);

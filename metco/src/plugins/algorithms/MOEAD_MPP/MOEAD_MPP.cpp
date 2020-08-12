@@ -70,6 +70,7 @@ void MOEAD_MPP::runGeneration() {
   }
   // Aplicamos la actualizacion de BNP
   BNPSurvivalSelection(offspringPop);
+
 }
 
 /**
@@ -80,6 +81,9 @@ void MOEAD_MPP::runGeneration() {
  *
  */
 void MOEAD_MPP::BNPSurvivalSelection(vector<Individual *> &offspring) {
+#ifdef __MOEAD_MPP_DEBUG__
+  std::cout << "\t\tRunning BNP Survival Selection" << std::endl;
+#endif
   const double initialD = 0.5;
   vector<Individual *> penalized;
   vector<Individual *> currentIndividuals;
@@ -96,6 +100,9 @@ void MOEAD_MPP::BNPSurvivalSelection(vector<Individual *> &offspring) {
 
   double d =
       initialD - initialD * (getPerformedEvaluations() / getCritStopValue());
+#ifdef __MOEAD_MPP_DEBUG__
+  std::cout << "D = " << d << std::endl;
+#endif
   while (newPopulation.size() < getPopulationSize()) {
     for (unsigned i = 0; i < currentIndividuals.size(); i++) {
       // Distancia al vecino mas cercano en NewPopulation
@@ -141,19 +148,13 @@ void MOEAD_MPP::BNPSurvivalSelection(vector<Individual *> &offspring) {
   for (Individual *ind : newPopulation) {
     population->push_back(ind->internalClone());
   }
-  // Liberamos la memoria
-  for (Individual *ind : penalized) {
-    delete (ind);
-  }
-  for (Individual *ind : currentIndividuals) {
-    delete (ind);
-  }
-  for (Individual *ind : newPopulation) {
-    delete (ind);
-  }
+
   penalized.clear();
   currentIndividuals.clear();
   newPopulation.clear();
+#ifdef __MOEAD_MPP_DEBUG__
+  std::cout << "\t\tBNP Survival Selection Done!" << std::endl;
+#endif
 }
 
 /**
