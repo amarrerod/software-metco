@@ -16,15 +16,16 @@ const int MOEAD_MPP::INITIAL_GENERATION = 0;
 const int MOEAD_MPP::NUM_PARAMS = 5;
 
 // Constructor
-MOEAD_MPP::MOEAD_MPP() { secondPopulation = new vector<Individual *>; }
+MOEAD_MPP::MOEAD_MPP() { //secondPopulation = new vector<Individual *>;
+     }
 
 // Destructor
 MOEAD_MPP::~MOEAD_MPP(void) {
-  for (int i = 0; i < secondPopulation->size(); i++)
+  /*for (int i = 0; i < secondPopulation->size(); i++)
     delete ((*secondPopulation)[i]);
-  delete (secondPopulation);
+  delete (secondPopulation);*/
 
-  for (int i = 0; i < offspringPop.size(); i++) {
+  for (unsigned i = 0; i < offspringPop.size(); i++) {
     delete (offspringPop[i]);
   }
   offspringPop.clear();
@@ -65,12 +66,10 @@ void MOEAD_MPP::runGeneration() {
     updateReferencePoint(offSpring);
     updateNeighbouringSolution(offSpring, i, threshold, useWholePop);
     offspringPop.push_back(offSpring->internalClone());
-    // updateSecondPopulation(offSpring);
     delete (offSpring);
   }
   // Aplicamos la actualizacion de BNP
   BNPSurvivalSelection(offspringPop);
-
 }
 
 /**
@@ -81,18 +80,15 @@ void MOEAD_MPP::runGeneration() {
  *
  */
 void MOEAD_MPP::BNPSurvivalSelection(vector<Individual *> &offspring) {
-#ifdef __MOEAD_MPP_DEBUG__
-  std::cout << "\t\tRunning BNP Survival Selection" << std::endl;
-#endif
   const double initialD = 0.5;
   vector<Individual *> penalized;
   vector<Individual *> currentIndividuals;
-  currentIndividuals.reserve((*population).size() + offspring.size());
-  currentIndividuals.insert(currentIndividuals.end(), (*population).begin(),
-                            (*population).end());
-  currentIndividuals.insert(currentIndividuals.end(), (*population).begin(),
-                            (*population).end());
-
+  for(int i = 0; i < getPopulationSize(); i++){
+      currentIndividuals.push_back((*population)[i]->internalClone());
+  }
+  for(int i = 0; i < offspring.size(); i++){
+      currentIndividuals.push_back(offspring[i]->internalClone());
+  }
   sort(currentIndividuals.begin(), currentIndividuals.end(),
        orderByFeasibility);
   vector<Individual *> newPopulation{currentIndividuals[0]->internalClone()};
@@ -100,9 +96,6 @@ void MOEAD_MPP::BNPSurvivalSelection(vector<Individual *> &offspring) {
 
   double d =
       initialD - initialD * (getPerformedEvaluations() / getCritStopValue());
-#ifdef __MOEAD_MPP_DEBUG__
-  std::cout << "D = " << d << std::endl;
-#endif
   while (newPopulation.size() < getPopulationSize()) {
     for (unsigned i = 0; i < currentIndividuals.size(); i++) {
       // Distancia al vecino mas cercano en NewPopulation
@@ -148,13 +141,19 @@ void MOEAD_MPP::BNPSurvivalSelection(vector<Individual *> &offspring) {
   for (Individual *ind : newPopulation) {
     population->push_back(ind->internalClone());
   }
+  for (int i = 0; i < currentIndividuals.size(); i++) {
+    delete (currentIndividuals[i]);
+  }
+  for (int i = 0; i < newPopulation.size(); i++) {
+    delete (newPopulation[i]);
+  }
+  for (int i = 0; i < penalized.size(); i++) {
+    delete (penalized[i]);
+  }
 
   penalized.clear();
-  currentIndividuals.clear();
   newPopulation.clear();
-#ifdef __MOEAD_MPP_DEBUG__
-  std::cout << "\t\tBNP Survival Selection Done!" << std::endl;
-#endif
+  currentIndividuals.clear();
 }
 
 /**
@@ -204,7 +203,7 @@ bool MOEAD_MPP::init(const vector<string> &params) {
 
 // Get solution from the external population (non-dominated solutions)
 void MOEAD_MPP::getSolution(MOFront *p) {
-  for (unsigned int i = 0; i < population->size(); i++) {
+  for (unsigned int i = 0; i < getPopulationSize(); i++) {
     p->insert((*population)[i]);
   }
 }

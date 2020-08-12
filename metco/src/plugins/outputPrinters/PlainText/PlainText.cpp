@@ -48,8 +48,7 @@ void PlainText::printSolution(EA *ga, bool end) {
         MOFront *p = new MOFrontVector(ga->getSampleInd(), false, false);
         ga->getSolution(p);
         outputFile << p;
-        delete p;
-        p = nullptr;
+        delete(p);
       } catch (const std::bad_alloc &except) {
         std::cerr << "Allocation failed at PlainText" << endl;
       }
@@ -69,4 +68,4 @@ bool PlainText::init(const vector<string> &params) {
   return true;
 }
 
-void PlainText::finish() { outputFile.close(); }
+void PlainText::finish() { outputFile.close();}

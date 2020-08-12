@@ -308,15 +308,16 @@ int main(int argc, char *argv[]) {
   // Runs the evolurionary process
   std::cout << "Todo cargado!" << std::endl;
   ga->run();
-  std::cout << "Ejecucion terminada" << std::endl;
   MOFront *p = new MOFrontVector(ga->getSampleInd(), false, false);
 
   // Program Output
   outputPrinter->printSolution(ga, true);
   outputPrinter->finish();
+  std::cout << "Ejecucion terminada" << std::endl;
 
   // Finishing
   delete (ga);
   delete (ind);
-  exit(EXIT_SUCCESS);
+
+    exit(EXIT_SUCCESS);
 }

@@ -2,6 +2,7 @@
 <project version="4">
   <component name="CidrRootsConfiguration">
     <sourceRoots>
+      <file path="$PROJECT_DIR$/../.." />
       <file path="$PROJECT_DIR$/../../plugins" />
       <file path="$PROJECT_DIR$/../../plugins/algorithms" />
     </sourceRoots>
@@ -25,6 +26,6 @@
     </option>
   </component>
   <component name="MakefileWorkspace" PROJECT_DIR="$PROJECT_DIR$">
-    <contentRoot DIR="$PROJECT_DIR$/../../.." />
+    <contentRoot DIR="$PROJECT_DIR$/../.." />
   </component>
 </project>
