@@ -44,6 +44,7 @@ vector<double> MenuPlanning::infoNPlan;
 MenuPlanning::MenuPlanning() {
   // restrictionsID.fill(0.0f);
   this->setFeasibility(0.0);
+  distanceClosestN = 0.0;
 }
 
 /**
@@ -232,6 +233,7 @@ Individual *MenuPlanning::clone(void) const {
   mpp->badDays = {badDays};
   mpp->heaviestNut = heaviestNut;
   mpp->heaviestType = heaviestType;
+  mpp->distanceClosestN = distanceClosestN;
   return mpp;
 }
 
@@ -654,6 +656,37 @@ void MenuPlanning::print(ostream &os) const {
   os << std::endl;
 }
 #endif
+
+/**
+ * Método empleado para calcular la distancia entre dos individuos
+ *
+ */
+double MenuPlanning::getEuclideanDistance(Individual *ind2) const {
+  map<Food, int> f1;
+  int dist = 0;
+  for (int i = 0; i < nDias; i++) {
+    Food f;
+    f.p1 = round(getVar(i * 3));
+    f.p2 = round(getVar(i * 3 + 1));
+    f.p3 = round(getVar(i * 3 + 2));
+    f1[f]++;
+  }
+  for (int i = 0; i < nDias; i++) {
+    Food f;
+    f.p1 = round(ind2->getVar(i * 3));
+    f.p2 = round(ind2->getVar(i * 3 + 1));
+    f.p3 = round(ind2->getVar(i * 3 + 2));
+    if (f1.count(f)) {
+      f1[f]--;
+      if (f1[f] == 0) {
+        f1.erase(f);
+      }
+    } else {
+      dist++;
+    }
+  }
+  return dist;
+}
 
 /*----------------------------------------------------------------------*/
 /*---------- METODOS PARA EL CALCULO DEL GRADO DE REPETICION -----------*/

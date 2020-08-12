@@ -33,6 +33,8 @@
 
 using namespace std;
 
+class MenuPlanning;
+
 class MOEAD_MPP : public EA {
  public:
   // Constructor
@@ -100,6 +102,9 @@ class MOEAD_MPP : public EA {
   // External population
   vector<Individual *> *secondPopulation;
 
+  // Offspring population generated in each iteration
+  vector<Individual *> offspringPop;
+
   // Private methods:
 
   // Initialises the reference point
@@ -135,11 +140,13 @@ class MOEAD_MPP : public EA {
 
   void computeIDRanges(double &minIDS, double &maxIDS);
 
-  // Iterated Local Search ILS
-  void localSearch();
+  void BNPSurvivalSelection(vector<Individual *> &offspring);
 
   // Survival Selection Technique Based on BNP - MPP CEC 2019
   void survivorSelectionBNP();
+
+  double computeClosesDistance(const unsigned int &i);
+
   // Sorts neighbour weight vectors in terms of the Euclidean distance
   // between each of them and a particular weight vector in ascending order
   void minFastSort(vector<double> &dist, vector<int> &indx,

@@ -311,8 +311,8 @@ class Individual : public Plugin {
   virtual void generationCode() const {}
 
   // Distancia euclidea
-  double getEuclideanDistance(const Individual *) const;
-  double getEuclideanDistanceDecisionSpace(const Individual *) const;
+  virtual double getEuclideanDistance(const Individual *) const;
+  virtual double getEuclideanDistanceDecisionSpace(const Individual *) const;
 
   // LocalSearch
   virtual unsigned int getNeighbourhoodSize() const {

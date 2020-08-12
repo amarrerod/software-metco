@@ -88,6 +88,8 @@ class MenuPlanning : public Individual {
   double heaviestNut;
   double heaviestType;
 
+  double distanceClosestN;
+
   void dependentCrossover(Individual *ind);  // Operadro de cruce especifico
   void dependentMutation(double pm);         // Operador de mutacion específico
 
@@ -107,6 +109,7 @@ class MenuPlanning : public Individual {
   void pairBasedCrossover(Individual *ind2);
   // Búsqueda Local HillClimbing basada en MPP CEC 2019
   virtual void localSearch();
+  double getEuclideanDistance(Individual *ind) const;
 
 #ifdef __MPP_PRINT_ID_S__
   // Imprime los datos de un individuo MenuPlanning

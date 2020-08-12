@@ -54,7 +54,7 @@ metcoPar_SOURCES = metcoPar.cpp
 
 FLEX = flex
 BISON = bison
-CCFLAGS = -c -O3 -std=c++14 -D $(HOSTNAME) 
+CCFLAGS = -c -O2 -g -std=c++14 -D $(HOSTNAME) 
 IFLAGS = -I. -I.. -I../utils -I../../../src_external/hv-1.1-src
 DFLAGS =
 LFLAGS = -fPIC
@@ -97,7 +97,7 @@ decompositions:
 ######################## sequential #####################################
 
 metcoSeq$(EXEEXT): metcoSeq.cpp Individual.o MOFrontBinaryInteger.o MOFrontVector_noMPI.o MOFront.o hv.o avl.o EA.o utils.o ScoreAlgorithm.o Mutation.o Crossover.o LocalSearch.o Plugin.o OutputPrinter.o MultiObjectivization.o Decomposition.o
-	$(CXX) -DNO_CONF_PARSING $(IFLAGS) metcoSeq.cpp Individual.o MOFrontBinaryInteger.o MOFrontVector_noMPI.o MOFront.o hv.o avl.o EA.o utils.o ScoreAlgorithm.o Mutation.o Crossover.o LocalSearch.o Plugin.o OutputPrinter.o MultiObjectivization.o Decomposition.o -o $@ -ldl
+	$(CXX) -DNO_CONF_PARSING $(IFLAGS) -O2 -g -std=c++14 metcoSeq.cpp Individual.o MOFrontBinaryInteger.o MOFrontVector_noMPI.o MOFront.o hv.o avl.o EA.o utils.o ScoreAlgorithm.o Mutation.o Crossover.o LocalSearch.o Plugin.o OutputPrinter.o MultiObjectivization.o Decomposition.o -o $@ -ldl
 
 
 
