@@ -29,7 +29,7 @@
 #include "Individual.h"
 #include "MOFront.h"
 
-#define __MOEAD_MPP_DEBUG__
+//#define __MOEAD_MPP_DEBUG__
 
 using namespace std;
 
@@ -126,7 +126,7 @@ class MOEAD_MPP : public EA {
   void updateReferencePoint(Individual *ind);
 
   // Updates the external population with non-dominated solutions
-  void updateSecondPopulation(Individual *ind);
+  void updateSecondPopulation();
 
   // Compares a novel offspring to its neighboring solutions in order to update
   // the neighbourhood
@@ -140,7 +140,7 @@ class MOEAD_MPP : public EA {
 
   void computeIDRanges(double &minIDS, double &maxIDS);
 
-  void BNPSurvivalSelection(vector<Individual *> &offspring);
+  void BNPSurvivalSelection();
 
   // Survival Selection Technique Based on BNP - MPP CEC 2019
   void survivorSelectionBNP();

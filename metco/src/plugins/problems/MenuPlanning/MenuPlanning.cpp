@@ -44,7 +44,6 @@ vector<double> MenuPlanning::infoNPlan;
 MenuPlanning::MenuPlanning() {
   // restrictionsID.fill(0.0f);
   this->setFeasibility(0.0);
-  distanceClosestN = 0.0;
 }
 
 /**
@@ -230,7 +229,6 @@ Individual *MenuPlanning::clone(void) const {
   mpp->badDays = {badDays};
   mpp->heaviestNut = heaviestNut;
   mpp->heaviestType = heaviestType;
-  mpp->distanceClosestN = distanceClosestN;
   return mpp;
 }
 

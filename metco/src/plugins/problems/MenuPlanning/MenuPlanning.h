@@ -88,8 +88,6 @@ class MenuPlanning : public Individual {
   double heaviestNut;
   double heaviestType;
 
-  double distanceClosestN;
-
   void dependentCrossover(Individual *ind);  // Operadro de cruce especifico
   void dependentMutation(double pm);         // Operador de mutacion específico
 

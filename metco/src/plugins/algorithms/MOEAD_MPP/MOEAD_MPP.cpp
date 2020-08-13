@@ -16,30 +16,36 @@ const int MOEAD_MPP::INITIAL_GENERATION = 0;
 const int MOEAD_MPP::NUM_PARAMS = 5;
 
 // Constructor
-MOEAD_MPP::MOEAD_MPP() { //secondPopulation = new vector<Individual *>;
-     }
+MOEAD_MPP::MOEAD_MPP() { secondPopulation = new vector<Individual *>; }
 
 // Destructor
 MOEAD_MPP::~MOEAD_MPP(void) {
-  /*for (int i = 0; i < secondPopulation->size(); i++)
-    delete ((*secondPopulation)[i]);
-  delete (secondPopulation);*/
+  for (int i = 0; i < secondPopulation->size(); i++)
+    delete (*secondPopulation)[i];
+  delete (secondPopulation);
+  secondPopulation->shrink_to_fit();
 
   for (unsigned i = 0; i < offspringPop.size(); i++) {
-    delete (offspringPop[i]);
+    if (offspringPop[i] != nullptr) {
+      delete (offspringPop[i]);
+    }
   }
   offspringPop.clear();
+  offspringPop.shrink_to_fit();
 
   for (int i = 0; i < neighbourhood.size(); i++) {
     neighbourhood[i].clear();
   }
   neighbourhood.clear();
+  neighbourhood.shrink_to_fit();
 
   for (int i = 0; i < weightVector.size(); i++) {
     weightVector[i].clear();
   }
   weightVector.clear();
+  weightVector.shrink_to_fit();
   delete (referencePoint);
+  referencePoint = nullptr;
 }
 
 void MOEAD_MPP::runGeneration() {
@@ -53,6 +59,7 @@ void MOEAD_MPP::runGeneration() {
 #endif
   const double delta = 0.9;
   offspringPop.clear();
+  offspringPop.reserve(getPopulationSize());
   for (int i = 0; i < getPopulationSize(); i++) {
     // Version que gestiona las restricciones
     bool useWholePop = ((rand() / RAND_MAX) < delta) ? false : true;
@@ -69,7 +76,8 @@ void MOEAD_MPP::runGeneration() {
     delete (offSpring);
   }
   // Aplicamos la actualizacion de BNP
-  BNPSurvivalSelection(offspringPop);
+  BNPSurvivalSelection();
+  updateSecondPopulation();
 }
 
 /**
@@ -79,19 +87,27 @@ void MOEAD_MPP::runGeneration() {
  * Basado en MPP CEC 2019
  *
  */
-void MOEAD_MPP::BNPSurvivalSelection(vector<Individual *> &offspring) {
+void MOEAD_MPP::BNPSurvivalSelection() {
   const double initialD = 0.5;
   vector<Individual *> penalized;
   vector<Individual *> currentIndividuals;
-  for(int i = 0; i < getPopulationSize(); i++){
-      currentIndividuals.push_back((*population)[i]->internalClone());
+  currentIndividuals.reserve(getPopulationSize() + offspringPop.size());
+
+  for (int i = 0; i < getPopulationSize(); i++) {
+    currentIndividuals.push_back((*population)[i]->internalClone());
+    delete (*population)[i];
+    (*population)[i] = nullptr;
   }
-  for(int i = 0; i < offspring.size(); i++){
-      currentIndividuals.push_back(offspring[i]->internalClone());
+  for (int i = 0; i < offspringPop.size(); i++) {
+    currentIndividuals.push_back(offspringPop[i]->internalClone());
+    delete (offspringPop[i]);
+    offspringPop[i] = nullptr;
   }
   sort(currentIndividuals.begin(), currentIndividuals.end(),
        orderByFeasibility);
-  vector<Individual *> newPopulation{currentIndividuals[0]->internalClone()};
+  vector<Individual *> newPopulation;
+  newPopulation.reserve(getPopulationSize());
+  newPopulation.push_back(currentIndividuals[0]->internalClone());
   currentIndividuals.erase(currentIndividuals.begin());
 
   double d =
@@ -111,6 +127,7 @@ void MOEAD_MPP::BNPSurvivalSelection(vector<Individual *> &offspring) {
         currentIndividuals.erase(currentIndividuals.begin() + i);
       }
     }
+    // Buscamos el individuo con mayor penalizacion
     double distancePenalized = std::numeric_limits<double>::min();
     vector<Individual *>::iterator largestPenalized = penalized.begin();
     for (vector<Individual *>::iterator it = penalized.begin();
@@ -138,22 +155,29 @@ void MOEAD_MPP::BNPSurvivalSelection(vector<Individual *> &offspring) {
   }
   // Actualizamos la poblacion
   population->clear();
-  for (Individual *ind : newPopulation) {
-    population->push_back(ind->internalClone());
+  population->reserve(getPopulationSize());
+  for (int i = 0; i < newPopulation.size(); i++) {
+    population->push_back(newPopulation[i]->internalClone());
+    delete (newPopulation[i]);
+    newPopulation[i] = nullptr;
   }
   for (int i = 0; i < currentIndividuals.size(); i++) {
     delete (currentIndividuals[i]);
-  }
-  for (int i = 0; i < newPopulation.size(); i++) {
-    delete (newPopulation[i]);
+    currentIndividuals[i] = nullptr;
   }
   for (int i = 0; i < penalized.size(); i++) {
     delete (penalized[i]);
+    penalized[i] = nullptr;
   }
 
   penalized.clear();
+  penalized.shrink_to_fit();
   newPopulation.clear();
+  newPopulation.shrink_to_fit();
   currentIndividuals.clear();
+  currentIndividuals.shrink_to_fit();
+  offspringPop.clear();
+  offspringPop.shrink_to_fit();
 }
 
 /**
@@ -203,8 +227,8 @@ bool MOEAD_MPP::init(const vector<string> &params) {
 
 // Get solution from the external population (non-dominated solutions)
 void MOEAD_MPP::getSolution(MOFront *p) {
-  for (unsigned int i = 0; i < getPopulationSize(); i++) {
-    p->insert((*population)[i]);
+  for (unsigned int i = 0; i < secondPopulation->size(); i++) {
+    p->insert((*secondPopulation)[i]);
   }
 }
 
@@ -364,53 +388,55 @@ void MOEAD_MPP::updateReferencePoint(Individual *ind) {
  * Metodo para actualizar la poblacion secundaria eliminando los individuos
  * dominados por el individuo que recibe como parametro
  **/
-void MOEAD_MPP::updateSecondPopulation(Individual *ind) {
-  unsigned int i = 0;
+void MOEAD_MPP::updateSecondPopulation() {
   const double epsilon = 0.0001;
   // Removes from the external population all those individuals dominated by
   // individual ind
-  while (i < secondPopulation->size()) {
-    // Primero comprobamos la factibilidad
-    bool remove = false;
-    if (ind->getFeasibility() < (*secondPopulation)[i]->getFeasibility()) {
-      remove = true;
-      // En caso de igualar comprobamos que lo domina
-    } else {
-      if ((abs(ind->getFeasibility() -
-               (*secondPopulation)[i]->getFeasibility()) < epsilon) &&
-          (dominanceTest((*secondPopulation)[i], ind) == SECOND_DOMINATES)) {
+  for (Individual *ind : (*population)) {
+    unsigned int i = 0;
+    while (i < secondPopulation->size()) {
+      // Primero comprobamos la factibilidad
+      bool remove = false;
+      if (ind->getFeasibility() < (*secondPopulation)[i]->getFeasibility()) {
         remove = true;
+        // En caso de igualar comprobamos que lo domina
+      } else {
+        if ((abs(ind->getFeasibility() -
+                 (*secondPopulation)[i]->getFeasibility()) < epsilon) &&
+            (dominanceTest((*secondPopulation)[i], ind) == SECOND_DOMINATES)) {
+          remove = true;
+        }
       }
+      // Eliminamos si procede
+      if (remove) {
+        delete ((*secondPopulation)[i]);
+        (*secondPopulation)[i] =
+            (*secondPopulation)[secondPopulation->size() - 1];
+        secondPopulation->pop_back();
+      } else
+        i++;
     }
-    // Eliminamos si procede
-    if (remove) {
-      delete ((*secondPopulation)[i]);
-      (*secondPopulation)[i] =
-          (*secondPopulation)[secondPopulation->size() - 1];
-      secondPopulation->pop_back();
-    } else
-      i++;
-  }
 
-  // Adds individual ind to the external population if no individual in the said
-  // population dominates it
-  bool insert = true;
-  i = 0;
-  while (i < secondPopulation->size()) {
-    if ((*secondPopulation)[i]->getFeasibility() < ind->getFeasibility()) {
-      insert = false;
-      break;
-    } else {
-      if ((abs(ind->getFeasibility() -
-               (*secondPopulation)[i]->getFeasibility()) < epsilon) &&
-          (dominanceTest((*secondPopulation)[i], ind) == FIRST_DOMINATES)) {
+    // Adds individual ind to the external population if no individual in the
+    // said population dominates it
+    bool insert = true;
+    i = 0;
+    while (i < secondPopulation->size()) {
+      if ((*secondPopulation)[i]->getFeasibility() < ind->getFeasibility()) {
         insert = false;
         break;
+      } else {
+        if ((abs(ind->getFeasibility() -
+                 (*secondPopulation)[i]->getFeasibility()) < epsilon) &&
+            (dominanceTest((*secondPopulation)[i], ind) == FIRST_DOMINATES)) {
+          insert = false;
+          break;
+        }
       }
+      i++;
     }
-    i++;
+    if (insert) secondPopulation->push_back(ind->internalClone());
   }
-  if (insert) secondPopulation->push_back(ind->internalClone());
 }
 
 /**
