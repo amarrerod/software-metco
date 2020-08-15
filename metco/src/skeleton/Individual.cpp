@@ -470,7 +470,7 @@ void Individual::restart(void) {
   }
 }
 
-void Individual::localSearch() {}
+void Individual::dependentLocalSearch() {}
 
 /**
  * 	Metodo de reparacion de individuos

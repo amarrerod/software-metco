@@ -25,7 +25,6 @@
 #include "Individual.h"
 
 #define __MPP_FEASIBILITY_DEBUG__
-#define __MPP_ILS_DEBUG__
 #define __MPP_PRINT_ID_S__
 
 char *getcwd(char *buf, size_t size);
@@ -105,8 +104,9 @@ class MenuPlanning : public Individual {
   // Operadores de cruce para MPP basados en MPP CEC 2019
   void uniformCrossover(Individual *ind2);
   void pairBasedCrossover(Individual *ind2);
+
   // Búsqueda Local HillClimbing basada en MPP CEC 2019
-  virtual void localSearch();
+  virtual void dependentLocalSearch();
   double getEuclideanDistance(Individual *ind) const;
 
 #ifdef __MPP_PRINT_ID_S__

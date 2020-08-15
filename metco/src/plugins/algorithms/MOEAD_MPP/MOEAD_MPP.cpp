@@ -352,6 +352,7 @@ Individual *MOEAD_MPP::createOffspring(const int &i, const bool &useWholePop) {
   // p1 and p2
   p1->mutation(pm);
   evaluate(p1);
+  p1->dependentLocalSearch();
   // Free memory
   delete (p2);
   return p1;

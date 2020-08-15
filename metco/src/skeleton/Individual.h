@@ -305,8 +305,8 @@ class Individual : public Plugin {
 
   // Inicializacion aleatoria de un individuo
   virtual void restart(void);
-
-  virtual void localSearch(void);
+  // Método para realizar una búsqueda local dependiente del problema
+  virtual void dependentLocalSearch(void);
   // Codigo llamado tras cada generacion
   virtual void generationCode() const {}
 

@@ -218,9 +218,7 @@ void MenuPlanning::restart(void) {
     }
   }
   evaluate();
-#ifdef __MPP_ILS_DEBUG__
-  localSearch();
-#endif
+  dependentLocalSearch();
 }
 
 /**
@@ -332,7 +330,7 @@ void MenuPlanning::pairBasedCrossover(Individual *i2) {
  * ILS Basada en MPP CEC 2019
  *
  **/
-void MenuPlanning::localSearch() {
+void MenuPlanning::dependentLocalSearch() {
   vector<Neighbor> neighbors;
   for (int i = 0; i < nDias; i++) {
     for (int j = 0; j < 3; j++) {
@@ -430,10 +428,6 @@ void MenuPlanning::dependentMutation(double pm) {
       mod = true;
     }
   }
-#ifdef __MPP_ILS_DEBUG__
-  // Aplicamos la ILS porque siempre se aplica mutacion en cada iteracion
-  localSearch();
-#endif
 }
 
 /**
