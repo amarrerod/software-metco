@@ -267,7 +267,6 @@ int main(int argc, char *argv[]) {
 
   ind->setMutOperator(mut);
   ind->setCrossOperator(cross);
-  std::cout << "Iniciando EA" << std::endl;
   // Initiate the corresponding EA
   string algorithmName = argv[ARG_ALGORITHM];
   EA *ga = getEA(pluginPath, argv[ARG_ALGORITHM], algorithmArgs, true, ind);
@@ -292,7 +291,6 @@ int main(int argc, char *argv[]) {
   ga->setMaxLocalFrontSize(maxLocalFrontSize);
   ga->setScoreAlgorithm(score);
   ga->setLocalSearch(ls);
-  std::cout << "EA cargado" << std::endl;
   vector<string> outputPrinterParams(1, (outputPath + "/" + outputFilename));
   OutputPrinter *outputPrinter =
       getOutputPrinter(pluginPath, printerModule, outputPrinterParams, true);
@@ -306,7 +304,6 @@ int main(int argc, char *argv[]) {
   outputPrinter->printInit(ga);
 
   // Runs the evolurionary process
-  std::cout << "Todo cargado!" << std::endl;
   ga->run();
   MOFront *p = new MOFrontVector(ga->getSampleInd(), false, false);
 
@@ -319,5 +316,5 @@ int main(int argc, char *argv[]) {
   delete (ga);
   delete (ind);
 
-    exit(EXIT_SUCCESS);
+  exit(EXIT_SUCCESS);
 }

@@ -218,7 +218,9 @@ void MenuPlanning::restart(void) {
     }
   }
   evaluate();
-  // localSearch();
+#ifdef __MPP_ILS_DEBUG__
+  localSearch();
+#endif
 }
 
 /**
@@ -331,9 +333,6 @@ void MenuPlanning::pairBasedCrossover(Individual *i2) {
  *
  **/
 void MenuPlanning::localSearch() {
-#ifdef __MPP_ILS_DEBUG__
-  std::cout << "Running LocalSearch" << std::endl;
-#endif
   vector<Neighbor> neighbors;
   for (int i = 0; i < nDias; i++) {
     for (int j = 0; j < 3; j++) {
@@ -345,19 +344,12 @@ void MenuPlanning::localSearch() {
       }
     }
   }
-#ifdef __MPP_ILS_DEBUG__
-  std::cout << "Neighbours done!" << std::endl;
-#endif
   vector<double> bestIndividual = {var};
   evaluate();
   std::tuple<double, double, double> bestResult =
       make_tuple(getFeasibility(), getObj(0), getObj(1));
   const int maxIterations = 100;
-#ifdef __MPP_ILS_DEBUG__
-  std::cout << "Before Loop!" << std::endl;
-#endif
   for (int i = 0; i < maxIterations; i++) {
-    std::cout << "Iteration #" << i << std::endl;
     evaluate();
     tuple<double, double, double> currentResult =
         make_tuple(getFeasibility(), getObj(0), getObj(1));
@@ -379,7 +371,6 @@ void MenuPlanning::localSearch() {
         }
       }
     }
-    std::cout << "While done" << std::endl;
     if (currentResult >= bestResult) {
       var = {bestIndividual};
     } else {
@@ -389,34 +380,22 @@ void MenuPlanning::localSearch() {
 
     evaluate();
     if (badDays.size() == 0) {
-#ifdef __MPP_ILS_DEBUG__
-      std::cout << "BadDays  == 0 !" << std::endl;
-#endif
       if (heaviestNut != -1) {
-        std::cout << "BadDAys if" << std::endl;
         vector<pair<double, int>> infoNut;
         for (int i = 0; i < nDias; i++) {
-          std::cout << "BadDays for" << std::endl;
           double total = v_primerosPlatos[var[i * 3]].infoN[heaviestNut] +
                          v_segundosPlatos[var[i * 3 + 1]].infoN[heaviestNut] +
                          v_postres[var[i * 3 + 2]].infoN[heaviestNut];
           infoNut.push_back(make_pair(total, i));
         }
-        std::cout << "BadDays for done" << std::endl;
         sort(infoNut.begin(), infoNut.end());
-        std::cout << "BadDays sort done" << std::endl;
-
         if (heaviestType == 1) {
-          std::cout << "BadDays to reverse" << std::endl;
-
           reverse(infoNut.begin(), infoNut.end());
-          std::cout << "BadDays reverse done" << std::endl;
         }
         int selectedDay = infoNut[random() % 6].second;
         var[selectedDay * 3] = (rand() % NPLATOS[0]);
         var[selectedDay * 3 + 1] = (rand() % NPLATOS[1]);
         var[selectedDay * 3 + 2] = (rand() % NPLATOS[2]);
-        std::cout << "BadDays if done" << std::endl;
         infoNut.clear();
       } else {
         int selectedDay = random() % nDias;
@@ -424,9 +403,6 @@ void MenuPlanning::localSearch() {
         var[selectedDay * 3 + 1] = (rand() % NPLATOS[1]);
         var[selectedDay * 3 + 2] = (rand() % NPLATOS[2]);
       }
-#ifdef __MPP_ILS_DEBUG__
-      std::cout << "BadDays  == 0 DONE!" << std::endl;
-#endif
     } else {
       for (int i = 0; i < badDays.size(); i++) {
         int day = badDays[i];
@@ -435,16 +411,8 @@ void MenuPlanning::localSearch() {
       }
     }
   }
-#ifdef __MPP_ILS_DEBUG__
-  std::cout << "Loop Done!" << std::endl;
-#endif
-
   var = {bestIndividual};
   evaluate();
-
-#ifdef __MPP_ILS_DEBUG__
-  std::cout << "Evaluate done. ILS finished" << std::endl;
-#endif
 }
 
 /*-------------------------------------------*/
@@ -462,7 +430,10 @@ void MenuPlanning::dependentMutation(double pm) {
       mod = true;
     }
   }
-  // if (mod) repair();
+#ifdef __MPP_ILS_DEBUG__
+  // Aplicamos la ILS porque siempre se aplica mutacion en cada iteracion
+  localSearch();
+#endif
 }
 
 /**

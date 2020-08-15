@@ -29,11 +29,9 @@
 #include "Individual.h"
 #include "MOFront.h"
 
-//#define __MOEAD_MPP_DEBUG__
+#define __MOEAD_MPP_DEBUG__
 
 using namespace std;
-
-class MenuPlanning;
 
 class MOEAD_MPP : public EA {
  public:
