@@ -1,2 +1,7 @@
 *.o
 analyzeExperiments
+calculateContributions
+calculateCoverages
+calculateEpsilonInd
+generationalDistanceReferenceFront
+mergeFrontsExperiments
