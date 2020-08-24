@@ -12,7 +12,5 @@ install:
 
 script:
   - gcc --version
-  - cd oplink/algorithms/team/src/skeleton/main/
-  - bash gen.sh
-  - bash configure
-  - make
+  - cd metco/src/skeleton/main/
+  - bash build.sh

@@ -1,0 +1,9 @@
+build-essential
+autotools-dev
+automake
+bison
+flex
+libcr-dev
+mpich
+mpich-doc
+libgsl-dev
