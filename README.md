@@ -1,7 +1,7 @@
 # Metaheuristic-based Extensible Tool for Cooperative Optimisation (METCO) 
 #### Version registered at Safe Creative
 
-[![Build Status](https://travis-ci.org/PAL-ULL/software-metco.svg?branch=master)](https://travis-ci.org/PAL-ULL/software-metco)
+[![Build Status](https://travis-ci.com/amarrerod/software-metco.svg?branch=master)](https://travis-ci.com/amarrerod/software-metco)
 
 Welcome! You've found the source code of METCO, a registered tool which can be use to developing and testing metaheuristics in C/C++ language.
 
