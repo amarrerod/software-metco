@@ -1,16 +1,19 @@
 LFLAGS = -shared 
+OBJDIR = objdir
+SODIR = sodir
+LIBRARYDIR = library
 EADIR = ../../plugins/algorithms/
 IFLAGS= -I../ -I../utils/ -I../utils/fuzzylite/
-SO_FILE= $(algorithm).so
-COMPLETE_O_FILE=$(algorithm).complete.o
-O_FILE= $(algorithm).o
+SO_FILE= $(SODIR)/$(algorithm).so
+COMPLETE_O_FILE=$(OBJDIR)/$(algorithm).complete.o
+O_FILE= $(OBJDIR)/$(algorithm).o
 C_FILE:=$(EADIR)$(algorithm)/$(algorithm).cpp
 H_FILE:=$(EADIR)$(algorithm)/$(algorithm).h
 LIBRARY_C_FILE:=$(EADIR)$(algorithm)/$(algorithm).library.cpp
-LIBRARY_O_FILE:=$(algorithm).library.o
+LIBRARY_O_FILE:=$(LIBRARYDIR)/$(algorithm).library.o
 H_FILE:=$(EADIR)$(algorithm)/$(algorithm).h
 FILE_TO_CHANGE:=../complete.c
-OBJ_FILES:=EA.reloc.o Individual.reloc.o MOFrontBinaryInteger.reloc.o MOFrontVector_noMPI.reloc.o MOFront.reloc.o hv.reloc.o avl.reloc.o utils.reloc.o Plugin.reloc.o
+OBJ_FILES:=$(OBJDIR)/EA.reloc.o $(OBJDIR)/Individual.reloc.o $(OBJDIR)/MOFrontBinaryInteger.reloc.o $(OBJDIR)/MOFrontVector_noMPI.reloc.o $(OBJDIR)/MOFront.reloc.o $(OBJDIR)/hv.reloc.o $(OBJDIR)/avl.reloc.o $(OBJDIR)/utils.reloc.o $(OBJDIR)/Plugin.reloc.o
 
 $(SO_FILE):$(O_FILE) $(OBJ_FILES) $(LIBRARY_O_FILE)  
 	$(CXX) $(IFLAGS) $(LFLAGS) -o $@ -Wl,--whole-archive  ../utils/fuzzylite/lib/libfuzzylite-static.a -Wl,--no-whole-archive -Wl,-soname,$@ $^

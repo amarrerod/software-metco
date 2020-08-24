@@ -1,16 +1,19 @@
 LFLAGS = -shared 
+OBJDIR = objdir
+SODIR = sodir
+LIBRARYDIR = library
 CROSSOVERDIR = ../../plugins/crossovers/
 IFLAGS= -I../ -I../utils/ -I$(CROSSOVERDIR)$(crossover)/
-SO_FILE= $(crossover).so
+SO_FILE= $(SODIR)/$(crossover).so
 COMPLETE_O_FILE=$(crossover).complete.o
-O_FILE= $(crossover).o
+O_FILE= $(OBJDIR)/$(crossover).o
 C_FILE:=$(CROSSOVERDIR)$(crossover)/$(crossover).cpp
 H_FILE:=$(CROSSOVERDIR)$(crossover)/$(crossover).h
 LIBRARY_C_FILE:=$(CROSSOVERDIR)$(crossover)/$(crossover).library.cpp
-LIBRARY_O_FILE:=$(crossover).library.o
+LIBRARY_O_FILE:= $(LIBRARYDIR)/$(crossover).library.o
 H_FILE:=$(CROSSOVERDIR)$(crossover)/$(crossover).h
 FILE_TO_CHANGE:=../complete.c
-OBJ_FILES:=Crossover.reloc.o Individual.reloc.o utils.reloc.o Plugin.reloc.o
+OBJ_FILES:=$(OBJDIR)/Crossover.reloc.o $(OBJDIR)/Individual.reloc.o $(OBJDIR)/utils.reloc.o $(OBJDIR)/Plugin.reloc.o
 
 $(SO_FILE):$(O_FILE) $(OBJ_FILES) $(LIBRARY_O_FILE) 
 	$(CXX) $(IFLAGS) $(LFLAGS) -o $@ -Wl,-soname,$@ $^

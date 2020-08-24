@@ -335,15 +335,15 @@ top_srcdir = @top_srcdir@
 @condPlugins_TRUE@temp = ${plugin_path}
 nodist_include_HEADERS = *.so
 
-# HOSTNAME
-HOSTNAME = $(shell hostname)
-
 #ACLOCAL_AMFLAGS = -I configureFiles
 metcoSeq_SOURCES = metcoSeq.cpp
 metcoPar_SOURCES = metcoPar.cpp
+OBJDIR = objdir
+SODIR = sodir
+LIBRARYDYR = library
 FLEX = flex
 BISON = bison
-CCFLAGS = -c -O2 -g -std=c++14 -D $(HOSTNAME) 
+CCFLAGS = -c -O2 -g -std=c++14 
 IFLAGS = -I. -I.. -I../utils -I../../../src_external/hv-1.1-src
 DFLAGS = 
 LFLAGS = -fPIC
@@ -869,9 +869,25 @@ dist-hook:
 	cp ../utils/*.h ../utils/*.cpp $(distdir)/src/skeleton/utils/
 	cp -R ../../../src_external $(distdir)/
 
+all: dirs sequential ${parallel} problems algorithms conversions scores migrationSelectors exchangeSelectors mutations crossovers migrationTopologies initPopIslandLoaders localSearches outputPrinters multiObjectivizations decompositions
+
 *.so:
 ../../problems/*:
-all: sequential ${parallel} problems algorithms conversions scores migrationSelectors exchangeSelectors mutations crossovers migrationTopologies initPopIslandLoaders localSearches outputPrinters multiObjectivizations decompositions
+
+dirs: objdir sodir library
+
+library: 
+	@echo Generando $@
+	mkdir -p $(LIBRARYDYR)
+
+objdir: 
+	@echo Generando $@
+	mkdir -p $(OBJDIR)
+
+sodir:
+	@echo Generando $@
+	mkdir -p $(SODIR)
+
 sequential: metcoSeq
 parallel: metcoPar
 problems:
@@ -903,17 +919,19 @@ multiObjectivizations:
 decompositions:
 		make -s -f makefile_decompositions CXX="$(CXX)" CCFLAGS="$(CCFLAGS)"
 
+.PHONY: all clean
+
 ######################## sequential #####################################
 
-metcoSeq$(EXEEXT): metcoSeq.cpp Individual.o MOFrontBinaryInteger.o MOFrontVector_noMPI.o MOFront.o hv.o avl.o EA.o utils.o ScoreAlgorithm.o Mutation.o Crossover.o LocalSearch.o Plugin.o OutputPrinter.o MultiObjectivization.o Decomposition.o
-	$(CXX) -DNO_CONF_PARSING $(IFLAGS) -O2 -g -std=c++14 metcoSeq.cpp Individual.o MOFrontBinaryInteger.o MOFrontVector_noMPI.o MOFront.o hv.o avl.o EA.o utils.o ScoreAlgorithm.o Mutation.o Crossover.o LocalSearch.o Plugin.o OutputPrinter.o MultiObjectivization.o Decomposition.o -o $@ -ldl
+metcoSeq: metcoSeq.cpp $(OBJDIR)/Individual.o $(OBJDIR)/MOFrontBinaryInteger.o $(OBJDIR)/MOFrontVector_noMPI.o $(OBJDIR)/MOFront.o $(OBJDIR)/hv.o $(OBJDIR)/avl.o $(OBJDIR)/EA.o $(OBJDIR)/utils.o $(OBJDIR)/ScoreAlgorithm.o $(OBJDIR)/Mutation.o $(OBJDIR)/Crossover.o $(OBJDIR)/LocalSearch.o $(OBJDIR)/Plugin.o $(OBJDIR)/OutputPrinter.o $(OBJDIR)/MultiObjectivization.o $(OBJDIR)/Decomposition.o
+	$(CXX) -DNO_CONF_PARSING $(IFLAGS) -O2 -g -std=c++14 metcoSeq.cpp $(OBJDIR)/Individual.o $(OBJDIR)/MOFrontBinaryInteger.o $(OBJDIR)/MOFrontVector_noMPI.o $(OBJDIR)/MOFront.o $(OBJDIR)/hv.o $(OBJDIR)/avl.o $(OBJDIR)/EA.o $(OBJDIR)/utils.o $(OBJDIR)/ScoreAlgorithm.o $(OBJDIR)/Mutation.o $(OBJDIR)/Crossover.o $(OBJDIR)/LocalSearch.o $(OBJDIR)/Plugin.o $(OBJDIR)/OutputPrinter.o $(OBJDIR)/MultiObjectivization.o $(OBJDIR)/Decomposition.o -o $@ -ldl
 
 #########################################################################
 
 ############################# parallel ##################################
 
-metcoPar$(EXEEXT): metcoPar.cpp MOFrontBinaryInteger.o MOFrontVector.o MOFront.o hv.o avl.o Individual.o EA.o ExecutionIsland.o CoordinatorIsland.o Configuration.o utils.o parseConf.tab.c lex.Conf.c Conversion.o ScoreAlgorithm.o GlobalScoreAlgorithm.o LocalScoreAlgorithm.o MigrationSelector.o ExchangeSelector.o Mutation.o Crossover.o LocalSearch.o MigrationTopology.o InitPopIslandLoader.o Plugin.o MultiObjectivization.o Decomposition.o
-	$(MPICC) $(IFLAGS) metcoPar.cpp Individual.o MOFrontBinaryInteger.o MOFrontVector.o MOFront.o hv.o avl.o EA.o ExecutionIsland.o utils.o CoordinatorIsland.o Configuration.o parseConf.tab.c lex.Conf.c Conversion.o ScoreAlgorithm.o MigrationSelector.o ExchangeSelector.o GlobalScoreAlgorithm.o LocalScoreAlgorithm.o Mutation.o Crossover.o LocalSearch.o MigrationTopology.o InitPopIslandLoader.o Plugin.o MultiObjectivization.o Decomposition.o -o $@ -ldl
+metcoPar: metcoPar.cpp $(OBJDIR)/MOFrontBinaryInteger.o $(OBJDIR)/MOFrontVector.o $(OBJDIR)/MOFront.o $(OBJDIR)/hv.o $(OBJDIR)/avl.o $(OBJDIR)/Individual.o $(OBJDIR)/EA.o $(OBJDIR)/ExecutionIsland.o $(OBJDIR)/CoordinatorIsland.o $(OBJDIR)/Configuration.o $(OBJDIR)/utils.o parseConf.tab.c lex.Conf.c $(OBJDIR)/Conversion.o $(OBJDIR)/ScoreAlgorithm.o $(OBJDIR)/GlobalScoreAlgorithm.o $(OBJDIR)/LocalScoreAlgorithm.o $(OBJDIR)/MigrationSelector.o $(OBJDIR)/ExchangeSelector.o $(OBJDIR)/Mutation.o $(OBJDIR)/Crossover.o $(OBJDIR)/LocalSearch.o $(OBJDIR)/MigrationTopology.o $(OBJDIR)/InitPopIslandLoader.o $(OBJDIR)/Plugin.o $(OBJDIR)/MultiObjectivization.o $(OBJDIR)/Decomposition.o
+	$(MPICC) $(IFLAGS) metcoPar.cpp $(OBJDIR)/Individual.o $(OBJDIR)/MOFrontBinaryInteger.o $(OBJDIR)/MOFrontVector.o $(OBJDIR)/MOFront.o $(OBJDIR)/hv.o $(OBJDIR)/avl.o $(OBJDIR)/EA.o $(OBJDIR)/ExecutionIsland.o $(OBJDIR)/utils.o $(OBJDIR)/CoordinatorIsland.o $(OBJDIR)/Configuration.o parseConf.tab.c lex.Conf.c $(OBJDIR)/Conversion.o $(OBJDIR)/ScoreAlgorithm.o $(OBJDIR)/MigrationSelector.o $(OBJDIR)/ExchangeSelector.o $(OBJDIR)/GlobalScoreAlgorithm.o $(OBJDIR)/LocalScoreAlgorithm.o $(OBJDIR)/Mutation.o $(OBJDIR)/Crossover.o $(OBJDIR)/LocalSearch.o $(OBJDIR)/MigrationTopology.o $(OBJDIR)/InitPopIslandLoader.o $(OBJDIR)/Plugin.o $(OBJDIR)/MultiObjectivization.o $(OBJDIR)/Decomposition.o -o $@ -ldl
 
 #########################################################################
 
@@ -925,167 +943,68 @@ parseConf.tab.c: ../parseConf.y
 lex.Conf.c: ../parseConf.l
 	$(FLEX) -PConf -i ../parseConf.l
 
-Plugin.o: ../Plugin.cpp
+$(OBJDIR)/%.o: ../%.cpp
 	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
 
-CoordinatorIsland.o: ../CoordinatorIsland.cpp
+$(OBJDIR)%.reloc.o: ../%.cpp
+	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
+
+$(OBJDIR)/utils.o: ../utils/utils.cpp
+	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
+
+$(OBJDIR)/CoordinatorIsland.o: ../CoordinatorIsland.cpp
 	$(MPICC) $(IFLAGS) $(CCFLAGS) $< -o $@
 
-Configuration.o: ../Configuration.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-utils.o: ../utils/utils.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-ExecutionIsland.o: ../ExecutionIsland.cpp
+$(OBJDIR)/ExecutionIsland.o: ../ExecutionIsland.cpp
 	$(MPICC) $(IFLAGS) $(CCFLAGS) $< -o $@
 
-EA.o: ../EA.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-MOFront.o: ../MOFront.cpp
+$(OBJDIR)/MOFront.o: ../MOFront.cpp
 	$(MPICC) $(IFLAGS) $(CCFLAGS) -DVARIANT=4 $< -o $@
 
-MOFrontVector.o: ../MOFrontVector.cpp
-	$(MPICC) $(IFLAGS) $(CCFLAGS) -DVARIANT=4 $< -o $@
-
-MOFrontBinaryInteger.o: ../MOFrontBinaryInteger.cpp
-	$(MPICC) $(IFLAGS) $(CCFLAGS) -DVARIANT=4 $< -o $@
-
-MOFrontVector_noMPI.o: ../MOFrontVector.cpp
+$(OBJDIR)/MOFrontVector_noMPI.o: ../MOFrontVector.cpp
 	$(CXX) $(IFLAGS) $(CCFLAGS) -DNO_MPI -DVARIANT=4 $< -o $@
 
-Individual.o: ../Individual.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
+$(OBJDIR)/MOFrontVector.o: ../MOFrontVector.cpp
+	$(MPICC) $(IFLAGS) $(CCFLAGS) -DVARIANT=4 $< -o $@
 
-SimpleIndividual.o: ../SimpleIndividual.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
+$(OBJDIR)/MOFrontBinaryInteger.o: ../MOFrontBinaryInteger.cpp
+	$(MPICC) $(IFLAGS) $(CCFLAGS) -DVARIANT=4 $< -o $@
 
-Conversion.o: ../Conversion.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-ScoreAlgorithm.o: ../ScoreAlgorithm.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-GlobalScoreAlgorithm.o: ../GlobalScoreAlgorithm.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-LocalScoreAlgorithm.o: ../LocalScoreAlgorithm.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-MigrationSelector.o: ../MigrationSelector.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-ExchangeSelector.o: ../ExchangeSelector.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-Mutation.o: ../Mutation.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-Crossover.o: ../Crossover.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-MultiObjectivization.o: ../MultiObjectivization.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-Decomposition.o: ../Decomposition.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-LocalSearch.o: ../LocalSearch.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-MigrationTopology.o: ../MigrationTopology.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-OutputPrinter.o: ../OutputPrinter.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-InitPopIslandLoader.o: ../InitPopIslandLoader.cpp
-	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
-
-EA.reloc.o: ../EA.cpp
+$(OBJDIR)/%.reloc.o: ../%.cpp
 	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
 
-Individual.reloc.o: ../Individual.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-MOFrontVector_noMPI.reloc.o: ../MOFrontVector.cpp
+$(OBJDIR)/MOFrontVector_noMPI.reloc.o: ../MOFrontVector.cpp
 	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) -DNO_MPI -DVARIANT=4 $< -o $@
 
-MOFront.reloc.o: ../MOFront.cpp
+$(OBJDIR)/MOFront.reloc.o: ../MOFront.cpp
 	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) -DVARIANT=4 $< -o $@
 
-MOFrontBinaryInteger.reloc.o: ../MOFrontBinaryInteger.cpp
+$(OBJDIR)/MOFrontBinaryInteger.reloc.o: ../MOFrontBinaryInteger.cpp
 	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) -DVARIANT=4 $< -o $@
 
-hv.reloc.o: ../../../src_external/hv-1.1-src/hv.c
+$(OBJDIR)/hv.reloc.o: ../../../src_external/hv-1.1-src/hv.c
 	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) -DVARIANT=4  $< -o $@
 
-avl.reloc.o: ../../../src_external/hv-1.1-src/avl.c
+$(OBJDIR)/avl.reloc.o: ../../../src_external/hv-1.1-src/avl.c
 	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
 
-utils.reloc.o: ../utils/utils.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-Plugin.reloc.o: ../Plugin.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-Conversion.reloc.o: ../Conversion.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-Crossover.reloc.o: ../Crossover.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-MultiObjectivization.reloc.o: ../MultiObjectivization.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-Decomposition.reloc.o: ../Decomposition.cpp
-		$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-Mutation.reloc.o: ../Mutation.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-ExchangeSelector.reloc.o: ../ExchangeSelector.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-InitPopIslandLoader.reloc.o: ../InitPopIslandLoader.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-LocalSearch.reloc.o: ../LocalSearch.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-SimpleIndividual.reloc.o: ../SimpleIndividual.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-MigrationSelector.reloc.o: ../MigrationSelector.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-MigrationTopology.reloc.o: ../MigrationTopology.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-ScoreAlgorithm.reloc.o: ../ScoreAlgorithm.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-GlobalScoreAlgorithm.reloc.o: ../GlobalScoreAlgorithm.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-LocalScoreAlgorithm.reloc.o: ../LocalScoreAlgorithm.cpp
-	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
-
-OutputPrinter.reloc.o: ../OutputPrinter.cpp
+$(OBJDIR)/utils.reloc.o: ../utils/utils.cpp
 	$(CXX) $(IFLAGS) $(LFLAGS) $(CCFLAGS) $< -o $@
 
 #########################################################################
 
-hv.o: ../../../src_external/hv-1.1-src/hv.c
+$(OBJDIR)/hv.o: ../../../src_external/hv-1.1-src/hv.c
 	$(CXX) $(IFLAGS) $(CCFLAGS) -DVARIANT=4 $< -o $@
 
-avl.o: ../../../src_external/hv-1.1-src/avl.c
+$(OBJDIR)/avl.o: ../../../src_external/hv-1.1-src/avl.c
 	$(CXX) $(IFLAGS) $(CCFLAGS) $< -o $@
 
 #########################################################################
 clean:
-	rm -f *.o *.so *.stackdump *.tmp *~ out metcoSeq metcoPar parseConf.tab.h parseConf.tab.c lex.Conf.c
+	@rm -rf $(OBJDIR)
+	@rm -rf $(SODIR)
+	@rm -rf $(LIBRARYDYR)
+	@rm -f *.stackdump *.tmp *~ out metcoSeq metcoPar parseConf.tab.h parseConf.tab.c lex.Conf.c
 	make -s -f makefile_algorithms clean
 	make -s -f makefile_conversions clean
 	make -s -f makefile_crossovers clean

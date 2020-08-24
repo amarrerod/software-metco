@@ -1,16 +1,19 @@
-LFLAGS = -shared 
+LFLAGS = -shared
+OBJDIR = objdir
+SODIR = sodir
+LIBRARYDIR = library
 SCOREDIR = ../../plugins/scores/
 IFLAGS= -I../ -I$(SCOREDIR)$(score)/
-SO_FILE= $(score).so
+SO_FILE= $(SODIR)/$(score).so
 COMPLETE_O_FILE=$(score).complete.o
-O_FILE= $(score).o
+O_FILE= $(OBJDIR)/$(score).o
 C_FILE:=$(SCOREDIR)$(score)/$(score).cpp
 H_FILE:=$(SCOREDIR)$(score)/$(score).h
 LIBRARY_C_FILE:=$(SCOREDIR)$(score)/$(score).library.cpp
-LIBRARY_O_FILE:=$(score).library.o
+LIBRARY_O_FILE:=$(LIBRARYDIR)/$(score).library.o
 H_FILE:=$(SCOREDIR)$(score)/$(score).h
 FILE_TO_CHANGE:=../complete.c
-OBJ_FILES:=LocalScoreAlgorithm.reloc.o GlobalScoreAlgorithm.reloc.o ScoreAlgorithm.reloc.o MOFront.reloc.o hv.reloc.o avl.reloc.o Individual.reloc.o utils.reloc.o Plugin.reloc.o
+OBJ_FILES:=$(OBJDIR)/LocalScoreAlgorithm.reloc.o $(OBJDIR)/GlobalScoreAlgorithm.reloc.o $(OBJDIR)/ScoreAlgorithm.reloc.o $(OBJDIR)/MOFront.reloc.o $(OBJDIR)/hv.reloc.o $(OBJDIR)/avl.reloc.o $(OBJDIR)/Individual.reloc.o $(OBJDIR)/utils.reloc.o $(OBJDIR)/Plugin.reloc.o
 
 $(SO_FILE):$(O_FILE) $(OBJ_FILES) $(LIBRARY_O_FILE) 
 	$(CXX) $(IFLAGS) $(LFLAGS)  -o $@ -Wl,-soname,$@ $^

@@ -1,16 +1,19 @@
 LFLAGS = -shared 
+OBJDIR = objdir
+SODIR = sodir
+LIBRARYDIR = library
 CONVERSIONDIR = ../../plugins/conversions/
 IFLAGS= -I../ -I../utils/
-SO_FILE= $(conversion).so
+SO_FILE= $(SODIR)/$(conversion).so
 COMPLETE_O_FILE=$(conversion).complete.o
-O_FILE= $(conversion).o
+O_FILE= $(OBJDIR)/$(conversion).o
 C_FILE:=$(CONVERSIONDIR)$(conversion)/$(conversion).cpp
 H_FILE:=$(CONVERSIONDIR)$(conversion)/$(conversion).h
 LIBRARY_C_FILE:=$(CONVERSIONDIR)$(conversion)/$(conversion).library.cpp
-LIBRARY_O_FILE:=$(conversion).library.o
+LIBRARY_O_FILE:=$(LIBRARYDIR)/$(conversion).library.o
 H_FILE:=$(CONVERSIONDIR)$(conversion)/$(conversion).h
 FILE_TO_CHANGE:=../complete.c
-OBJ_FILES:=Conversion.reloc.o Individual.reloc.o Plugin.reloc.o
+OBJ_FILES:=$(OBJDIR)/Conversion.reloc.o $(OBJDIR)/Individual.reloc.o $(OBJDIR)/Plugin.reloc.o
 
 $(SO_FILE):$(O_FILE) $(OBJ_FILES) $(LIBRARY_O_FILE)
 	$(CXX) $(IFLAGS) $(LFLAGS)  -o $@ -Wl,-soname,$@ $^

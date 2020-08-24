@@ -1,16 +1,19 @@
 LFLAGS = -shared 
+OBJDIR = objdir
+SODIR = sodir
+LIBRARYDIR = library
 EXCHANGESELECTORDIR = ../../plugins/exchangeSelectors/
 IFLAGS= -I../ -I../utils/ -I$(EXCHANGESELECTORDIR)$(exchangeSelector)/
-SO_FILE= $(exchangeSelector).so
+SO_FILE= $(SODIR)/$(exchangeSelector).so
 COMPLETE_O_FILE=$(exchangeSelector).complete.o
-O_FILE= $(exchangeSelector).o
+O_FILE= $(OBJDIR)/$(exchangeSelector).o
 C_FILE:=$(EXCHANGESELECTORDIR)$(exchangeSelector)/$(exchangeSelector).cpp
 H_FILE:=$(EXCHANGESELECTORDIR)$(exchangeSelector)/$(exchangeSelector).h
 LIBRARY_C_FILE:=$(EXCHANGESELECTORDIR)$(exchangeSelector)/$(exchangeSelector).library.cpp
-LIBRARY_O_FILE:=$(exchangeSelector).library.o
+LIBRARY_O_FILE:=$(LIBRARYDIR)/$(exchangeSelector).library.o
 H_FILE:=$(EXCHANGESELECTORDIR)$(exchangeSelector)/$(exchangeSelector).h
 FILE_TO_CHANGE:=../complete.c
-OBJ_FILES:=ExchangeSelector.reloc.o Individual.reloc.o utils.reloc.o Plugin.reloc.o
+OBJ_FILES:=$(OBJDIR)/ExchangeSelector.reloc.o $(OBJDIR)/Individual.reloc.o $(OBJDIR)/utils.reloc.o $(OBJDIR)/Plugin.reloc.o
 
 $(SO_FILE):$(O_FILE) $(OBJ_FILES) $(LIBRARY_O_FILE) 
 	$(CXX) $(IFLAGS) $(LFLAGS)  -o $@ -Wl,-soname,$@ $^

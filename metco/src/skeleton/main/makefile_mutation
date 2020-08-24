@@ -1,16 +1,19 @@
 LFLAGS = -shared 
+OBJDIR = objdir
+SODIR = sodir
+LIBRARYDIR = library
 MUTATIONDIR = ../../plugins/mutations/
 IFLAGS= -I../ -I../utils/ -I$(MUTATIONDIR)$(mutation)/
-SO_FILE= $(mutation).so
+SO_FILE= $(SODIR)/$(mutation).so
 COMPLETE_O_FILE=$(mutation).complete.o
-O_FILE= $(mutation).o
+O_FILE= $(OBJDIR)/$(mutation).o
 C_FILE:=$(MUTATIONDIR)$(mutation)/$(mutation).cpp
 H_FILE:=$(MUTATIONDIR)$(mutation)/$(mutation).h
 LIBRARY_C_FILE:=$(MUTATIONDIR)$(mutation)/$(mutation).library.cpp
-LIBRARY_O_FILE:=$(mutation).library.o
+LIBRARY_O_FILE:=$(LIBRARYDIR)/$(mutation).library.o
 H_FILE:=$(MUTATIONDIR)$(mutation)/$(mutation).h
 FILE_TO_CHANGE:=../complete.c
-OBJ_FILES:=Mutation.reloc.o Individual.reloc.o utils.reloc.o Plugin.reloc.o
+OBJ_FILES:=$(OBJDIR)/Mutation.reloc.o $(OBJDIR)/Individual.reloc.o $(OBJDIR)/utils.reloc.o $(OBJDIR)/Plugin.reloc.o
 
 $(SO_FILE):$(O_FILE) $(OBJ_FILES) $(LIBRARY_O_FILE) 
 	$(CXX) $(IFLAGS) $(LFLAGS)  -o $@ -Wl,-soname,$@ $^

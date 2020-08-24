@@ -1,15 +1,18 @@
 LFLAGS = -shared 
+OBJDIR = objdir
+SODIR = sodir
+LIBRARYDIR = library
 PROBLEMDIR = ../../plugins/problems/
 IFLAGS= -I../../problems/$(problem)/ -I../ -I../utils/ -I../utils/CEC2013_MultiModal
-SO_FILE= $(problem).so
-COMPLETE_O_FILE=$(problem).complete.o
-O_FILE= $(problem).o
+SO_FILE= $(SODIR)/$(problem).so
+COMPLETE_O_FILE=$(OBJDIR)/$(problem).complete.o
+O_FILE= $(OBJDIR)/$(problem).o
 C_FILE:=$(PROBLEMDIR)$(problem)/$(problem).cpp
 H_FILE:=$(PROBLEMDIR)$(problem)/$(problem).h
 LIBRARY_C_FILE:=$(PROBLEMDIR)$(problem)/$(problem).library.cpp
-LIBRARY_O_FILE:=$(problem).library.o
+LIBRARY_O_FILE:=$(LIBRARYDIR)/$(problem).library.o
 FILE_TO_CHANGE:=../complete.c
-OBJ_FILES:=Individual.reloc.o Plugin.reloc.o utils.reloc.o
+OBJ_FILES:=$(OBJDIR)/Individual.reloc.o $(OBJDIR)/Plugin.reloc.o $(OBJDIR)/utils.reloc.o
 
 $(SO_FILE):$(O_FILE) $(OBJ_FILES) $(LIBRARY_O_FILE)
 	$(CXX) $(IFLAGS) $(LFLAGS) -o $@ -Wl,-soname,$@ $^ -lm -lgsl -lgslcblas

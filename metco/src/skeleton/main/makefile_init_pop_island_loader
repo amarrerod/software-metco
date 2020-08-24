@@ -1,16 +1,19 @@
 LFLAGS = -shared 
+OBJDIR = objdir
+SODIR = sodir
+LIBRARYDIR = library
 INITPOPISLANDLOADERDIR = ../../plugins/initPopIslandLoaders/
 IFLAGS= -I../ -I$(INITPOPISLANDLOADERDIR)$(initPopIslandLoader)/
-SO_FILE= $(initPopIslandLoader).so
+SO_FILE= $(SODIR)/$(initPopIslandLoader).so
 COMPLETE_O_FILE=$(initPopIslandLoader).complete.o
-O_FILE= $(initPopIslandLoader).o
+O_FILE= $(OBJDIR)/$(initPopIslandLoader).o
 C_FILE:=$(INITPOPISLANDLOADERDIR)$(initPopIslandLoader)/$(initPopIslandLoader).cpp
 H_FILE:=$(INITPOPISLANDLOADERDIR)$(initPopIslandLoader)/$(initPopIslandLoader).h
 LIBRARY_C_FILE:=$(INITPOPISLANDLOADERDIR)$(initPopIslandLoader)/$(initPopIslandLoader).library.cpp
-LIBRARY_O_FILE:=$(initPopIslandLoader).library.o
+LIBRARY_O_FILE:=$(LIBRARYDIR)/$(initPopIslandLoader).library.o
 H_FILE:=$(INITPOPISLANDLOADERDIR)$(initPopIslandLoader)/$(initPopIslandLoader).h
 FILE_TO_CHANGE:=../complete.c
-OBJ_FILES:=InitPopIslandLoader.reloc.o Individual.reloc.o utils.reloc.o Plugin.reloc.o
+OBJ_FILES:=$(OBJDIR)/InitPopIslandLoader.reloc.o $(OBJDIR)/Individual.reloc.o $(OBJDIR)/utils.reloc.o $(OBJDIR)/Plugin.reloc.o
 
 $(SO_FILE):$(O_FILE) $(OBJ_FILES) $(LIBRARY_O_FILE) 
 	$(CXX) $(IFLAGS) $(LFLAGS)  -o $@ -Wl,-soname,$@ $^
