@@ -27,6 +27,7 @@ const int MenuPlanning::MAX_INT = std::numeric_limits<int>::max();
 // Variables estaticas del problema
 int MenuPlanning::nDias;
 int MenuPlanning::nParam;
+string MenuPlanning::pathToDB;
 vector<infoPlatos> MenuPlanning::v_primerosPlatos;
 vector<infoPlatos> MenuPlanning::v_segundosPlatos;
 vector<infoPlatos> MenuPlanning::v_postres;
@@ -52,15 +53,17 @@ MenuPlanning::MenuPlanning() {
  * @param vector de parametros
  **/
 bool MenuPlanning::init(const vector<string> &params) {
-  if (params.size() != 1) {
+  if (params.size() != 2) {
     cout << "Error Menu Planning: numero incorrecto de parametros." << endl;
-    cout << "Number of days expected" << endl;
+    cout << "- Number of days expected" << endl;
+    cout << "- Path to DB expected" << std::endl;
     return false;
   }
   nDias = atoi((params[0]).c_str());
   nParam = nDias * num_tipoPlato;  // Multiplicar nDias por tipos de platos (3)
   setNumberOfVar(nParam);
   setNumberOfObj(N_OBJS);
+  pathToDB = params[1];
   set_gruposAl();
   set_Platos();
   set_vectorCompatibilidad();
@@ -72,6 +75,15 @@ bool MenuPlanning::init(const vector<string> &params) {
   // forcedRestrictionsID.resize(nDias * FORCED_INDEXES_SIZE, 0.0f);
 
   return true;
+}
+
+void MenuPlanning::set_Platos() {
+  string mainCourses = pathToDB + "/primerosplatos.txt";
+  string secondCourses = pathToDB + "/segundosplatos.txt";
+  string desserts = pathToDB + "/postres.txt";
+  set_VectoresPlatos(mainCourses.c_str(), v_primerosPlatos);
+  set_VectoresPlatos(secondCourses.c_str(), v_segundosPlatos);
+  set_VectoresPlatos(desserts.c_str(), v_postres);
 }
 
 /**
@@ -134,8 +146,8 @@ void MenuPlanning::set_VectoresPlatos(const char *c_filename,
     }
     ifs.close();
   } else {
-    cout << "\n\nError. No se han podido leer los archivos de platos.";
-    cin.get();
+    cout << "\n\nError. No se han podido leer los archivos de platos: "
+         << c_filename << endl;
     exit(0);
   }
 }
@@ -217,8 +229,6 @@ void MenuPlanning::restart(void) {
       setVar(i * 3 + j, random() % NPLATOS[j]);
     }
   }
-  evaluate();
-  dependentLocalSearch();
 }
 
 /**
@@ -344,13 +354,16 @@ void MenuPlanning::dependentLocalSearch() {
   }
   vector<double> bestIndividual = {var};
   evaluate();
-  std::tuple<double, double, double> bestResult =
-      make_tuple(getFeasibility(), getObj(0), getObj(1));
+  pair<double, double> bestResult =
+      make_pair(getFeasibility(),
+                ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
+
   const int maxIterations = 100;
   for (int i = 0; i < maxIterations; i++) {
     evaluate();
-    tuple<double, double, double> currentResult =
-        make_tuple(getFeasibility(), getObj(0), getObj(1));
+    pair<double, double> currentResult =
+        make_pair(getFeasibility(),
+                  ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
     bool improved = true;
     while (improved) {
       improved = false;
@@ -359,8 +372,9 @@ void MenuPlanning::dependentLocalSearch() {
         int currentValue = var[neighbors[i].variable];
         var[neighbors[i].variable] = neighbors[i].newValue;
         evaluate();
-        tuple<double, double, double> newResult =
-            make_tuple(getFeasibility(), getObj(0), getObj(1));
+        pair<double, double> newResult = make_pair(
+            getFeasibility(),
+            ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
         if (newResult >= currentResult) {
           var[neighbors[i].variable] = currentValue;
         } else {
@@ -434,6 +448,8 @@ void MenuPlanning::dependentMutation(double pm) {
  * Método que se encarga de calcular la factibilidad de un
  *
  * individuo con respecto a las restricciones de nutrientes
+ *
+ * BASADO en MPP CEC 2019
  *
  * Alejandro Marrero - alu0100825008@ull.edu.es
  **/

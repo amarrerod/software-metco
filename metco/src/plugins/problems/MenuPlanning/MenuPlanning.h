@@ -115,20 +115,7 @@ class MenuPlanning : public Individual {
 #endif
 
   // Lectura de ficheros de platos
-  void set_Platos(void) {
-    set_VectoresPlatos(
-        "/home/amarrero/Tools/software-metco/metco/src/plugins/problems/"
-        "MenuPlanning/databaseMenus/primerosplatos.txt",
-        v_primerosPlatos);
-    set_VectoresPlatos(
-        "/home/amarrero/Tools/software-metco/metco/src/plugins/problems/"
-        "MenuPlanning/databaseMenus/segundosplatos.txt",
-        v_segundosPlatos);
-    set_VectoresPlatos(
-        "/home/amarrero/Tools/software-metco/metco/src/plugins/problems/"
-        "MenuPlanning/databaseMenus/postres.txt",
-        v_postres);
-  }
+  void set_Platos(void);
   void set_VectoresPlatos(const char *c_filename, vector<infoPlatos> &v_vecP);
 
   void set_vectorCompatibilidad(void);  // Calcula la compatibilidad
@@ -174,6 +161,8 @@ class MenuPlanning : public Individual {
   void mostrarPlatos(void);
 
  private:
+  static string pathToDB;
+
   static const int N_OBJS;
   static const int MAX_INT;
 };

@@ -48,6 +48,27 @@ MOEAD_MPP::~MOEAD_MPP(void) {
   referencePoint = nullptr;
 }
 
+void MOEAD_MPP::fillPopWithNewIndsAndEvaluate() {
+  if (getPopulationSize() == -1) {
+    cerr << "Warning: fillPopWithNewInds called but pSize has not been "
+            "fixed. Using default value: 100"
+         << endl;
+    setPopulationSize(100);
+  }
+  const int NUM_OBJS = 2;
+  for (int i = population->size(); i < getPopulationSize(); i++) {
+    Individual *ind = getSampleInd()->internalClone();
+    ind->setAuxDataSize(NUM_OBJS);
+    ind->setAuxData(0, weightVector[i][0]);
+    ind->setAuxData(1, weightVector[i][1]);
+
+    ind->restart();
+    ind->dependentLocalSearch();
+    evaluate(ind);
+    population->push_back(ind);
+  }
+}
+
 void MOEAD_MPP::runGeneration() {
 // For each individual (subproblem) in the current population
 #ifdef __MOEAD_MPP_DEBUG__
@@ -75,109 +96,7 @@ void MOEAD_MPP::runGeneration() {
     offspringPop.push_back(offSpring->internalClone());
     delete (offSpring);
   }
-  // Aplicamos la actualizacion de BNP
-  BNPSurvivalSelection();
   updateSecondPopulation();
-}
-
-/**
- * Método para calcular los individuos que sobreviven a una generacion del
- * algoritmo
- *
- * Basado en MPP CEC 2019
- *
- */
-void MOEAD_MPP::BNPSurvivalSelection() {
-  const double initialD = 0.5;
-  vector<Individual *> penalized;
-  vector<Individual *> currentIndividuals;
-  currentIndividuals.reserve(getPopulationSize() + offspringPop.size());
-
-  for (int i = 0; i < getPopulationSize(); i++) {
-    currentIndividuals.push_back((*population)[i]->internalClone());
-    delete (*population)[i];
-    (*population)[i] = nullptr;
-  }
-  for (int i = 0; i < offspringPop.size(); i++) {
-    currentIndividuals.push_back(offspringPop[i]->internalClone());
-    delete (offspringPop[i]);
-    offspringPop[i] = nullptr;
-  }
-  sort(currentIndividuals.begin(), currentIndividuals.end(),
-       orderByFeasibility);
-  vector<Individual *> newPopulation;
-  newPopulation.reserve(getPopulationSize());
-  newPopulation.push_back(currentIndividuals[0]->internalClone());
-  currentIndividuals.erase(currentIndividuals.begin());
-
-  double d =
-      initialD - initialD * (getPerformedEvaluations() / getCritStopValue());
-  while (newPopulation.size() < getPopulationSize()) {
-    for (unsigned i = 0; i < currentIndividuals.size(); i++) {
-      // Distancia al vecino mas cercano en NewPopulation
-      double closest = std::numeric_limits<double>::max();
-      for (Individual *newInd : newPopulation) {
-        double distance = currentIndividuals[i]->getEuclideanDistance(newInd);
-        if (distance < closest) {
-          closest = distance;
-        }
-      }
-      if (closest < d) {
-        penalized.push_back(currentIndividuals[i]->internalClone());
-        currentIndividuals.erase(currentIndividuals.begin() + i);
-      }
-    }
-    // Buscamos el individuo con mayor penalizacion
-    double distancePenalized = std::numeric_limits<double>::min();
-    vector<Individual *>::iterator largestPenalized = penalized.begin();
-    for (vector<Individual *>::iterator it = penalized.begin();
-         it != penalized.end(); it++) {
-      for (Individual *newInd : newPopulation) {
-        double distance = (*it)->getEuclideanDistance(newInd);
-        if (distance > distancePenalized) {
-          distancePenalized = distance;
-          largestPenalized = it;
-        }
-      }
-    }
-    Individual *selected = getSampleInd()->internalClone();
-    if (currentIndividuals.empty()) {
-      selected = (*largestPenalized)->internalClone();
-      penalized.erase(largestPenalized);
-    } else {
-      sort(currentIndividuals.begin(), currentIndividuals.end(),
-           orderByFeasibility);
-      selected = currentIndividuals[0]->internalClone();
-      currentIndividuals.erase(currentIndividuals.begin());
-    }
-    newPopulation.push_back(selected->internalClone());
-    delete (selected);
-  }
-  // Actualizamos la poblacion
-  population->clear();
-  population->reserve(getPopulationSize());
-  for (int i = 0; i < newPopulation.size(); i++) {
-    population->push_back(newPopulation[i]->internalClone());
-    delete (newPopulation[i]);
-    newPopulation[i] = nullptr;
-  }
-  for (int i = 0; i < currentIndividuals.size(); i++) {
-    delete (currentIndividuals[i]);
-    currentIndividuals[i] = nullptr;
-  }
-  for (int i = 0; i < penalized.size(); i++) {
-    delete (penalized[i]);
-    penalized[i] = nullptr;
-  }
-
-  penalized.clear();
-  penalized.shrink_to_fit();
-  newPopulation.clear();
-  newPopulation.shrink_to_fit();
-  currentIndividuals.clear();
-  currentIndividuals.shrink_to_fit();
-  offspringPop.clear();
-  offspringPop.shrink_to_fit();
 }
 
 /**

@@ -11,6 +11,20 @@
 #include <string>
 #include <vector>
 
+// Constantes de normalización de objetivos en la ILS
+const int MIN_COST_20_DAYS = 0;
+const int MAX_COST_20_DAYS = 0;
+const int MIN_REPETITION_20_DAYS = 0;
+const int MAX_REPETITION_20_DAYS = 0;
+const int MIN_COST_40_DAYS = 0;
+const int MAX_COST_40_DAYS = 0;
+const int MIN_REPETITION_40_DAYS = 0;
+const int MAX_REPETITION_40_DAYS = 0;
+const int MIN_COST_60_DAYS = 0;
+const int MAX_COST_60_DAYS = 0;
+const int MIN_REPETITION_60_DAYS = 0;
+const int MAX_REPETITION_60_DAYS = 0;
+
 // Datos generales
 const int num_tipoPlato = 3;
 const int num_nutr = 21;

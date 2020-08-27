@@ -54,6 +54,9 @@ class MOEAD_MPP : public EA {
   // Shows information of the algorithm
   void printInfo(ostream &os) const;
 
+  // Metodo para inicializar la poblacion e incluir los pesos para cada ind
+  virtual void fillPopWithNewIndsAndEvaluate();
+
   // Getters and setters
   inline string getName() const { return "MOEA/D"; }
   inline int getNumberOfSubProblems() const { return numberSubProblems; }
@@ -137,11 +140,6 @@ class MOEAD_MPP : public EA {
                                const double &);
 
   void computeIDRanges(double &minIDS, double &maxIDS);
-
-  void BNPSurvivalSelection();
-
-  // Survival Selection Technique Based on BNP - MPP CEC 2019
-  void survivorSelectionBNP();
 
   double computeClosesDistance(const unsigned int &i);
 
