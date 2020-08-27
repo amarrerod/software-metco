@@ -12,18 +12,12 @@
 #include <vector>
 
 // Constantes de normalización de objetivos en la ILS
-const int MIN_COST_20_DAYS = 0;
-const int MAX_COST_20_DAYS = 0;
-const int MIN_REPETITION_20_DAYS = 0;
-const int MAX_REPETITION_20_DAYS = 0;
-const int MIN_COST_40_DAYS = 0;
-const int MAX_COST_40_DAYS = 0;
-const int MIN_REPETITION_40_DAYS = 0;
-const int MAX_REPETITION_40_DAYS = 0;
-const int MIN_COST_60_DAYS = 0;
-const int MAX_COST_60_DAYS = 0;
-const int MIN_REPETITION_60_DAYS = 0;
-const int MAX_REPETITION_60_DAYS = 0;
+// - Primera posicion = 20 días
+// - Segunda posicion = 40 dias
+// - Tercera posicion = 60 dias
+const std::array<std::tuple<int, int, int, int>, 3> objectivesRanges = {
+    make_tuple(20, 24, 240, 350), make_tuple(1, 1, 1, 1),
+    make_tuple(1, 1, 1, 1)};
 
 // Datos generales
 const int num_tipoPlato = 3;

@@ -87,6 +87,10 @@ class MenuPlanning : public Individual {
   double heaviestNut;
   double heaviestType;
 
+  // Variables para la normalizacion de objetivos en la ILS
+  static double minCost, maxCost;
+  static double minRepetition, maxRepetition;
+
   void dependentCrossover(Individual *ind);  // Operadro de cruce especifico
   void dependentMutation(double pm);         // Operador de mutacion específico
 
@@ -100,6 +104,8 @@ class MenuPlanning : public Individual {
   void restart(void);             // Generacion aleatoria del individuos
   void set_gruposAl(void);        // Metodo que define los grupos de alimentos
   double computeFeasibility();    // Calcula la factibilidad de los individuos
+
+  static void setObjectivesRanges(const int &);
 
   // Operadores de cruce para MPP basados en MPP CEC 2019
   void uniformCrossover(Individual *ind2);
@@ -165,6 +171,7 @@ class MenuPlanning : public Individual {
 
   static const int N_OBJS;
   static const int MAX_INT;
+  static const int N_ARGS;
 };
 
 #endif

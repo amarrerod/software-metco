@@ -21,6 +21,7 @@
 #include <cmath>
 
 // Constantes del problema
+const int MenuPlanning::N_ARGS = 2;
 const int MenuPlanning::N_OBJS = 2;
 const int MenuPlanning::MAX_INT = std::numeric_limits<int>::max();
 
@@ -42,10 +43,7 @@ vector<double> MenuPlanning::infoNPlan;
  *
  * Constructor por defecto de una instancia de MenuPlanning
  */
-MenuPlanning::MenuPlanning() {
-  // restrictionsID.fill(0.0f);
-  this->setFeasibility(0.0);
-}
+MenuPlanning::MenuPlanning() { this->setFeasibility(0.0); }
 
 /**
  * Metodo para inicializar un individuo MenuPlanning
@@ -53,7 +51,7 @@ MenuPlanning::MenuPlanning() {
  * @param vector de parametros
  **/
 bool MenuPlanning::init(const vector<string> &params) {
-  if (params.size() != 2) {
+  if (params.size() != N_ARGS) {
     cout << "Error Menu Planning: numero incorrecto de parametros." << endl;
     cout << "- Number of days expected" << endl;
     cout << "- Path to DB expected" << std::endl;
@@ -70,11 +68,26 @@ bool MenuPlanning::init(const vector<string> &params) {
   infoNPlan.assign(num_nutr, 0);
   alergenosPlan.assign(num_alerg, "0");
   incompatibilidadesPlan.assign(num_incomp, "0");
-
-  // Ajustamos el tamaño del vector de restricciones diarias
-  // forcedRestrictionsID.resize(nDias * FORCED_INDEXES_SIZE, 0.0f);
-
+  // Definimos las variables de normalizacion segun el numero de dias
+  int idx = 0;
+  if (nDias == 40) {
+    idx = 1;
+  } else if (nDias == 60) {
+    idx = 2;
+  }
+  setObjectivesRanges(idx);
   return true;
+}
+
+/**
+ *
+ *
+ */
+void MenuPlanning::setObjectivesRanges(const int &idx) {
+  minCost = get<0>(objectivesRanges[idx]);
+  maxCost = get<1>(objectivesRanges[idx]);
+  minRepetition = get<2>(objectivesRanges[idx]);
+  maxRepetition = get<3>(objectivesRanges[idx]);
 }
 
 void MenuPlanning::set_Platos() {
@@ -354,16 +367,25 @@ void MenuPlanning::dependentLocalSearch() {
   }
   vector<double> bestIndividual = {var};
   evaluate();
+  // Normalizacion de los objetivos
+  double cost = ((getObj(0) - minCost) / (maxCost - minCost));
+  double repetition =
+      ((getObj(1) - minRepetition) / (maxRepetition - minRepetition));
+
   pair<double, double> bestResult =
       make_pair(getFeasibility(),
-                ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
+                ((cost * getAuxData(0)) + (repetition * getAuxData(1))));
 
   const int maxIterations = 100;
   for (int i = 0; i < maxIterations; i++) {
     evaluate();
+    // Normalizacion de los objetivos
+    cost = ((getObj(0) - minCost) / (maxCost - minCost));
+    repetition =
+        ((getObj(1) - minRepetition) / (maxRepetition - minRepetition));
     pair<double, double> currentResult =
         make_pair(getFeasibility(),
-                  ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
+                  ((cost * getAuxData(0)) + (repetition * getAuxData(1))));
     bool improved = true;
     while (improved) {
       improved = false;
@@ -372,9 +394,13 @@ void MenuPlanning::dependentLocalSearch() {
         int currentValue = var[neighbors[i].variable];
         var[neighbors[i].variable] = neighbors[i].newValue;
         evaluate();
-        pair<double, double> newResult = make_pair(
-            getFeasibility(),
-            ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
+        // Normalizacion de los objetivos
+        cost = ((getObj(0) - minCost) / (maxCost - minCost));
+        repetition =
+            ((getObj(1) - minRepetition) / (maxRepetition - minRepetition));
+        pair<double, double> newResult =
+            make_pair(getFeasibility(),
+                      ((cost * getAuxData(0)) + (repetition * getAuxData(1))));
         if (newResult >= currentResult) {
           var[neighbors[i].variable] = currentValue;
         } else {

@@ -153,7 +153,7 @@ bool MOEAD_MPP::init(const vector<string> &params) {
 
 /**
  * Generamos el frente de soluciones con los individuos factibles
- * - Archivo o población principal según configuraion
+ * - Archivo o población principal según configuracion
  */
 void MOEAD_MPP::getSolution(MOFront *p) {
   const double epsilon = 0.00001;
