@@ -106,8 +106,9 @@ class MOEAD_MPP : public EA {
   // Offspring population generated in each iteration
   vector<Individual *> offspringPop;
 
-  // Private methods:
+  bool useArchive;
 
+  // Private methods:
   // Initialises the reference point
   void initialiseReferencePoint();
 
@@ -121,7 +122,7 @@ class MOEAD_MPP : public EA {
   void initialisePopulation();
 
   // Generate an offsprings
-  Individual *createOffspring(const int &i, const bool &);
+  Individual *createOffspring(const int &i);
 
   // Updates the reference point
   void updateReferencePoint(Individual *ind);
@@ -131,8 +132,8 @@ class MOEAD_MPP : public EA {
 
   // Compares a novel offspring to its neighboring solutions in order to update
   // the neighbourhood
-  void updateNeighbouringSolution(Individual *ind, const int &i, const double &,
-                                  const bool &);
+  void updateNeighbouringSolution(Individual *ind, const int &i,
+                                  const double &);
 
   // Computes the fitness value of a particular individual by considering the
   // Tchebycheff approach

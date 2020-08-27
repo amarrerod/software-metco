@@ -13,7 +13,7 @@
 #include <limits>
 
 const int MOEAD_MPP::INITIAL_GENERATION = 0;
-const int MOEAD_MPP::NUM_PARAMS = 5;
+const int MOEAD_MPP::NUM_PARAMS = 6;
 
 // Constructor
 MOEAD_MPP::MOEAD_MPP() { secondPopulation = new vector<Individual *>; }
@@ -51,9 +51,9 @@ MOEAD_MPP::~MOEAD_MPP(void) {
 void MOEAD_MPP::fillPopWithNewIndsAndEvaluate() {
   if (getPopulationSize() == -1) {
     cerr << "Warning: fillPopWithNewInds called but pSize has not been "
-            "fixed. Using default value: 100"
+            "fixed. Using default value: 25"
          << endl;
-    setPopulationSize(100);
+    setPopulationSize(25);
   }
   const int NUM_OBJS = 2;
   for (int i = population->size(); i < getPopulationSize(); i++) {
@@ -69,30 +69,35 @@ void MOEAD_MPP::fillPopWithNewIndsAndEvaluate() {
   }
 }
 
+/**
+ * Método principal del algoritmo MOEA/D que ejecuta una iteración completa del
+ * algoritmo
+ * Esta versión incluye las modoficaciones propuestas en la versión del MOEA/D
+ * para la gestión de restricciones en problemas multi-objetivo.
+ */
 void MOEAD_MPP::runGeneration() {
-// For each individual (subproblem) in the current population
-#ifdef __MOEAD_MPP_DEBUG__
-  std::cout << "\tGeneration: " << this->getGeneration()
-            << "\tEvals: " << this->getPerformedEvaluations()
-            << "\tID(RP): " << referencePoint->getFeasibility() << " ("
-            << referencePoint->getObj(0) << "," << referencePoint->getObj(1)
-            << ")" << std::endl;
-#endif
-  const double delta = 0.9;
+  // For each individual (subproblem) in the current population
   offspringPop.clear();
   offspringPop.reserve(getPopulationSize());
   for (int i = 0; i < getPopulationSize(); i++) {
-    // Version que gestiona las restricciones
-    bool useWholePop = ((rand() / RAND_MAX) < delta) ? false : true;
+    // Basado en MOEAD que gestiona restricciones.
     double minIDS = 0.0, maxIDS = 0.0;
     computeIDRanges(minIDS, maxIDS);
     double threshold = minIDS + 0.3 * (maxIDS - minIDS);
-
+#ifdef __MOEAD_MPP_DEBUG__
+    std::cout << "\tGeneration: " << this->getGeneration()
+              << "\tEvals: " << this->getPerformedEvaluations()
+              << "\tID(RP): " << referencePoint->getFeasibility() << " ("
+              << referencePoint->getObj(0) << "," << referencePoint->getObj(1)
+              << ")"
+              << "\tID Ranges (" << minIDS << ", " << maxIDS << ")"
+              << std::endl;
+#endif
     // Creates a new offspring by applying the variation operators
-    Individual *offSpring = createOffspring(i, useWholePop);
+    Individual *offSpring = createOffspring(i);
     // Updates the state of the algorithm
     updateReferencePoint(offSpring);
-    updateNeighbouringSolution(offSpring, i, threshold, useWholePop);
+    updateNeighbouringSolution(offSpring, i, threshold);
     offspringPop.push_back(offSpring->internalClone());
     delete (offSpring);
   }
@@ -127,6 +132,7 @@ bool MOEAD_MPP::init(const vector<string> &params) {
     cerr << "Weight vectors file name" << endl;
     cerr << "Mutation rate pm" << endl;
     cerr << "Crossover rate pc" << endl;
+    cerr << "Using archive < 0 = NO, 1 = YES>" << endl;
     return false;
   }
 
@@ -141,13 +147,28 @@ bool MOEAD_MPP::init(const vector<string> &params) {
   initialiseReferencePoint();
   initialiseWeightVector();
   initialiseNeighbourhood();
+  useArchive = (atoi(params[5].c_str()) == 1) ? true : false;
   return true;
 }
 
-// Get solution from the external population (non-dominated solutions)
+/**
+ * Generamos el frente de soluciones con los individuos factibles
+ * - Archivo o población principal según configuraion
+ */
 void MOEAD_MPP::getSolution(MOFront *p) {
-  for (unsigned int i = 0; i < secondPopulation->size(); i++) {
-    p->insert((*secondPopulation)[i]);
+  const double epsilon = 0.00001;
+  if (useArchive) {
+    for (unsigned int i = 0; i < secondPopulation->size(); i++) {
+      if (abs((*secondPopulation)[i]->getFeasibility() - 0.0) < epsilon) {
+        p->insert((*secondPopulation)[i]);
+      }
+    }
+  } else {
+    for (unsigned int i = 0; i < getPopulationSize(); i++) {
+      if (abs((*population)[i]->getFeasibility() - 0.0) < epsilon) {
+        p->insert((*population)[i]);
+      }
+    }
   }
 }
 
@@ -245,22 +266,14 @@ void MOEAD_MPP::initialiseNeighbourhood() {
  * Método que aplica los operadores geneticos ç
  * para generar un nuevo individuo
  **/
-Individual *MOEAD_MPP::createOffspring(const int &i, const bool &useWholePop) {
+Individual *MOEAD_MPP::createOffspring(const int &i) {
   // Selects two neighboring solutions randomly
-  Individual *p1 = nullptr;
-  Individual *p2 = nullptr;
-  int idx1 = 0, idx2 = 0;
-  if (useWholePop) {
-    idx1 = (int)(getPopulationSize()) * (rand() / (RAND_MAX + 1.0));
-    idx2 = (int)(getPopulationSize()) * (rand() / (RAND_MAX + 1.0));
-  } else {
-    idx1 = (int)(getNeighbourhoodSize()) * (rand() / (RAND_MAX + 1.0));
-    idx2 = (int)(getNeighbourhoodSize()) * (rand() / (RAND_MAX + 1.0));
-    idx1 = neighbourhood[i][idx1];
-    idx2 = neighbourhood[i][idx2];
-  }
-  p1 = (*population)[idx1]->internalClone();
-  p2 = (*population)[idx2]->internalClone();
+  int idx1 = (int)(getNeighbourhoodSize()) * (rand() / (RAND_MAX + 1.0));
+  int idx2 = (int)(getNeighbourhoodSize()) * (rand() / (RAND_MAX + 1.0));
+  idx1 = neighbourhood[i][idx1];
+  idx2 = neighbourhood[i][idx2];
+  Individual *p1 = (*population)[idx1]->internalClone();
+  Individual *p2 = (*population)[idx2]->internalClone();
   // Crossover
   double vcross = rand() / (RAND_MAX + 1.0);
   if (vcross < pc) {
@@ -364,18 +377,10 @@ void MOEAD_MPP::updateSecondPopulation() {
  *
  **/
 void MOEAD_MPP::updateNeighbouringSolution(Individual *offspring, const int &i,
-                                           const double &threshold,
-                                           const bool &useWholePop) {
-  int searchLimit =
-      (useWholePop) ? getPopulationSize() : getNeighbourhoodSize();
-  for (int j = 0; j < searchLimit; j++) {
-    int idx = 0;
-    if (!useWholePop) {
-      // the index of the neighbouring subproblem
-      idx = neighbourhood[i][j];
-    } else
-      idx = j;
-
+                                           const double &threshold) {
+  for (int j = 0; j < getNeighbourhoodSize(); j++) {
+    // the index of the neighbouring subproblem
+    int idx = neighbourhood[i][j];
     // fitness of the offspring
     double f1 = computingFitnessValue(offspring, weightVector[idx], threshold);
     // fitness of the neighbour
@@ -394,6 +399,8 @@ void MOEAD_MPP::updateNeighbouringSolution(Individual *offspring, const int &i,
     if (update) {
       delete ((*population)[idx]);
       (*population)[idx] = offspring->internalClone();
+      // Solo permitimos el reemplazo de un individuo
+      break;
     }
   }
 }
