@@ -20,14 +20,19 @@ MOEAD_MPP::MOEAD_MPP() { secondPopulation = new vector<Individual *>; }
 
 // Destructor
 MOEAD_MPP::~MOEAD_MPP(void) {
-  for (int i = 0; i < secondPopulation->size(); i++)
-    delete (*secondPopulation)[i];
+  for (int i = 0; i < secondPopulation->size(); i++) {
+    if ((*secondPopulation)[i] != nullptr) {
+      delete (*secondPopulation)[i];
+      (*secondPopulation)[i] = nullptr;
+    }
+  }
   delete (secondPopulation);
   secondPopulation->shrink_to_fit();
 
   for (unsigned i = 0; i < offspringPop.size(); i++) {
     if (offspringPop[i] != nullptr) {
       delete (offspringPop[i]);
+      offspringPop[i] = nullptr;
     }
   }
   offspringPop.clear();
@@ -100,6 +105,7 @@ void MOEAD_MPP::runGeneration() {
     updateNeighbouringSolution(offSpring, i, threshold);
     offspringPop.push_back(offSpring->internalClone());
     delete (offSpring);
+    offSpring = nullptr;
   }
   updateSecondPopulation();
 }
@@ -119,6 +125,7 @@ void MOEAD_MPP::computeIDRanges(double &minIDS, double &maxIDS) {
 
   for (unsigned int i = 0; i < getPopulationSize(); i++) {
     delete (copy[i]);
+    copy[i] = nullptr;
   }
   copy.clear();
 }
@@ -287,6 +294,7 @@ Individual *MOEAD_MPP::createOffspring(const int &i) {
   p1->dependentLocalSearch();
   // Free memory
   delete (p2);
+  p2 = nullptr;
   return p1;
 }
 

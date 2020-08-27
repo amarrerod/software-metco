@@ -9,7 +9,11 @@
 
 #include <array>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
+
+using namespace std;
 
 // Constantes de normalización de objetivos en la ILS
 // - Primera posicion = 20 días

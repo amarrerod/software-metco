@@ -29,6 +29,11 @@ const int MenuPlanning::MAX_INT = std::numeric_limits<int>::max();
 int MenuPlanning::nDias;
 int MenuPlanning::nParam;
 string MenuPlanning::pathToDB;
+double MenuPlanning::minCost;
+double MenuPlanning::maxCost;
+double MenuPlanning::minRepetition;
+double MenuPlanning::maxRepetition;
+
 vector<infoPlatos> MenuPlanning::v_primerosPlatos;
 vector<infoPlatos> MenuPlanning::v_segundosPlatos;
 vector<infoPlatos> MenuPlanning::v_postres;
@@ -368,9 +373,9 @@ void MenuPlanning::dependentLocalSearch() {
   vector<double> bestIndividual = {var};
   evaluate();
   // Normalizacion de los objetivos
-  double cost = ((getObj(0) - minCost) / (maxCost - minCost));
-  double repetition =
-      ((getObj(1) - minRepetition) / (maxRepetition - minRepetition));
+  double cost = getObj(0);  //((getObj(0) - minCost) / (maxCost - minCost));
+  double repetition = getObj(1);  //     ((getObj(1) - minRepetition)
+                                  //     /(maxRepetition - minRepetition));
 
   pair<double, double> bestResult =
       make_pair(getFeasibility(),
@@ -380,9 +385,9 @@ void MenuPlanning::dependentLocalSearch() {
   for (int i = 0; i < maxIterations; i++) {
     evaluate();
     // Normalizacion de los objetivos
-    cost = ((getObj(0) - minCost) / (maxCost - minCost));
-    repetition =
-        ((getObj(1) - minRepetition) / (maxRepetition - minRepetition));
+    cost = getObj(0);  //((getObj(0) - minCost) / (maxCost - minCost));
+    repetition = getObj(
+        1);  //((getObj(1) - minRepetition) / (maxRepetition - minRepetition));
     pair<double, double> currentResult =
         make_pair(getFeasibility(),
                   ((cost * getAuxData(0)) + (repetition * getAuxData(1))));
@@ -395,9 +400,9 @@ void MenuPlanning::dependentLocalSearch() {
         var[neighbors[i].variable] = neighbors[i].newValue;
         evaluate();
         // Normalizacion de los objetivos
-        cost = ((getObj(0) - minCost) / (maxCost - minCost));
-        repetition =
-            ((getObj(1) - minRepetition) / (maxRepetition - minRepetition));
+        cost = getObj(0);  //((getObj(0) - minCost) / (maxCost - minCost));
+        repetition = getObj(1);  //            ((getObj(1) - minRepetition) /
+                                 //            (maxRepetition - minRepetition));
         pair<double, double> newResult =
             make_pair(getFeasibility(),
                       ((cost * getAuxData(0)) + (repetition * getAuxData(1))));
