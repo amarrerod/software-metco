@@ -48,11 +48,13 @@ vector<double> MenuPlanning::infoNPlan;
  *
  * Constructor por defecto de una instancia de MenuPlanning
  */
-MenuPlanning::MenuPlanning() { 
-  this->setFeasibility(0.0); 
+MenuPlanning::MenuPlanning() {
+  this->setFeasibility(0.0);
   originalCost = 0.0;
   originalRepetition = 0.0;
 }
+
+MenuPlanning::~MenuPlanning() { neighbors.clear(); }
 
 /**
  * Metodo para inicializar un individuo MenuPlanning
@@ -85,9 +87,28 @@ bool MenuPlanning::init(const vector<string> &params) {
     idx = 2;
   }
   setObjectivesRanges(idx);
+  computeNeighbors();
   return true;
 }
 
+/**
+ * Realizamos el cálculo de los vecinos en términos de platos
+ * para la ILS
+ * Como no va a cambiar, podemos realizarlo una única vez
+ */
+void MenuPlanning::computeNeighbors() {
+  neighbors.reserve(nDias * (NPLATOS[0] + NPLATOS[1] + NPLATOS[2]));
+  for (int i = 0; i < nDias; i++) {
+    for (int j = 0; j < 3; j++) {
+      for (int k = 0; k < NPLATOS[j]; k++) {
+        Neighbor n;
+        n.variable = i * 3 + j;
+        n.newValue = k;
+        neighbors.push_back(n);
+      }
+    }
+  }
+}
 /**
  *
  *
@@ -263,6 +284,10 @@ Individual *MenuPlanning::clone(void) const {
   mpp->heaviestType = heaviestType;
   mpp->originalCost = originalCost;
   mpp->originalRepetition = originalRepetition;
+  mpp->neighbors.reserve(neighbors.size());
+  for (unsigned i = 0; i < neighbors.size(); i++) {
+    mpp->neighbors[i] = Neighbor(neighbors[i]);
+  }
   return mpp;
 }
 
@@ -365,24 +390,14 @@ void MenuPlanning::pairBasedCrossover(Individual *i2) {
  *
  **/
 void MenuPlanning::dependentLocalSearch() {
-  vector<Neighbor> neighbors;
-  for (int i = 0; i < nDias; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < NPLATOS[j]; k++) {
-        Neighbor n;
-        n.variable = i * 3 + j;
-        n.newValue = k;
-        neighbors.push_back(n);
-      }
-    }
-  }
   vector<double> bestIndividual = {var};
   evaluate();
   pair<double, double> bestResult =
       make_pair(getFeasibility(),
                 ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
 
-  const int maxIterations = 100;
+  const int maxIterations = 50;
+  const double minImprove = 1e-2;
   for (int i = 0; i < maxIterations; i++) {
     evaluate();
     pair<double, double> currentResult =
@@ -399,9 +414,17 @@ void MenuPlanning::dependentLocalSearch() {
         pair<double, double> newResult = make_pair(
             getFeasibility(),
             ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
+        // Si no ha mejorado nos quedamos con el valor anterior
         if (newResult >= currentResult) {
           var[neighbors[i].variable] = currentValue;
-        } else {
+        } /**
+           * En otro caso comparamos que haya mejorado la factibilidad.
+           * Tenemos que hacerlo manualmente porque el operador <= compara
+           * los dos valores en caso de igualdad en el primer atributo
+           * Además vamos a añadirle un criterio de mejora mínima.
+           */
+        else if ((newResult < currentResult) &&
+                 ((currentResult.first - newResult.first) > minImprove)) {
           improved = true;
           currentResult = newResult;
         }
@@ -479,15 +502,14 @@ void MenuPlanning::dependentMutation(double pm) {
  **/
 double MenuPlanning::computeFeasibility() {
   feasibility = 0.0;
-  std::array<double, num_nutr> infoNPlan;
-  infoNPlan.fill(0.0);
+  std::array<double, num_nutr> infoNPlan{};
   badDays.clear();
   // Bucle para calcular did(S)
   for (int i = 0; i < nDias; i++) {
     int idx = i * num_tipoPlato;
     // Valores nutricionales para el dia I
-    std::array<double, num_nutr> dayNutr;
-    dayNutr.fill(0.0);
+    std::array<double, num_nutr> dayNutr{};
+
     // Primero obtenemos la cantidad de nutrientes de cada dia
     for (unsigned int j = 0; j < num_nutr; j++) {
       dayNutr[j] += v_primerosPlatos[round(getVar(idx))].infoN[j];

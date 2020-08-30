@@ -86,9 +86,9 @@ class MenuPlanning : public Individual {
   vector<int> badDays;
   double heaviestNut;
   double heaviestType;
+  vector<Neighbor> neighbors;
 
   double originalCost, originalRepetition;
-
 
   // Variables para la normalizacion de objetivos en la ILS
   static double minCost, maxCost;
@@ -99,7 +99,7 @@ class MenuPlanning : public Individual {
 
  public:
   MenuPlanning();
-  virtual ~MenuPlanning(){};
+  virtual ~MenuPlanning();
 
   bool init(const vector<string> &params);  // METCO init
   void evaluate(void);  // Metodo de evaluacion de individuos MenuPlanning
@@ -109,6 +109,8 @@ class MenuPlanning : public Individual {
   double computeFeasibility();    // Calcula la factibilidad de los individuos
 
   static void setObjectivesRanges(const int &);
+
+  void computeNeighbors();
 
   // Operadores de cruce para MPP basados en MPP CEC 2019
   void uniformCrossover(Individual *ind2);

@@ -10,6 +10,7 @@
 #include "MOEAD_MPP.h"
 
 #include <algorithm>
+#include <chrono>
 #include <limits>
 
 const int MOEAD_MPP::INITIAL_GENERATION = 0;
@@ -78,15 +79,6 @@ void MOEAD_MPP::runGeneration() {
     double minIDS = 0.0, maxIDS = 0.0;
     computeIDRanges(minIDS, maxIDS);
     double threshold = minIDS + 0.3 * (maxIDS - minIDS);
-#ifdef __MOEAD_MPP_DEBUG__
-    std::cout << "\tGeneration: " << this->getGeneration()
-              << "\tEvals: " << this->getPerformedEvaluations()
-              << "\tID(RP): " << referencePoint->getFeasibility() << " ("
-              << referencePoint->getObj(0) << "," << referencePoint->getObj(1)
-              << ")"
-              << "\tID Ranges (" << minIDS << ", " << maxIDS << ")"
-              << std::endl;
-#endif
     // Creates a new offspring by applying the variation operators
     Individual *offSpring = createOffspring(i);
     // Updates the state of the algorithm
@@ -186,13 +178,6 @@ void MOEAD_MPP::initialiseReferencePoint() {
     referencePoint->setObj(1, std::numeric_limits<double>::min());
   }
   referencePoint->setFeasibility(std::numeric_limits<double>::max());
-#ifdef __MOEAD_MPP_DEBUG__
-  std::cout << "\t\tInitial Reference Point: (" << referencePoint->getObj(0)
-            << "," << referencePoint->getObj(1)
-            << ") ID(S) = " << referencePoint->getFeasibility() << std::endl
-            << "\t\t=========================================================="
-            << std::endl;
-#endif
 }
 
 /**
