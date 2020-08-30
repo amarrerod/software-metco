@@ -20,8 +20,8 @@ using namespace std;
 // - Segunda posicion = 40 dias
 // - Tercera posicion = 60 dias
 const std::array<std::tuple<int, int, int, int>, 3> objectivesRanges = {
-    make_tuple(20, 24, 240, 350), make_tuple(1, 1, 1, 1),
-    make_tuple(1, 1, 1, 1)};
+    make_tuple(19, 24, 310, 375), make_tuple(40, 44, 700, 802),
+    make_tuple(60, 70, 1055, 1220)};
 
 // Datos generales
 const int num_tipoPlato = 3;

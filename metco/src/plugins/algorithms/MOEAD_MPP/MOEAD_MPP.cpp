@@ -27,16 +27,7 @@ MOEAD_MPP::~MOEAD_MPP(void) {
     }
   }
   delete (secondPopulation);
-  secondPopulation->shrink_to_fit();
-
-  for (unsigned i = 0; i < offspringPop.size(); i++) {
-    if (offspringPop[i] != nullptr) {
-      delete (offspringPop[i]);
-      offspringPop[i] = nullptr;
-    }
-  }
-  offspringPop.clear();
-  offspringPop.shrink_to_fit();
+  secondPopulation = nullptr;
 
   for (int i = 0; i < neighbourhood.size(); i++) {
     neighbourhood[i].clear();
@@ -82,8 +73,6 @@ void MOEAD_MPP::fillPopWithNewIndsAndEvaluate() {
  */
 void MOEAD_MPP::runGeneration() {
   // For each individual (subproblem) in the current population
-  offspringPop.clear();
-  offspringPop.reserve(getPopulationSize());
   for (int i = 0; i < getPopulationSize(); i++) {
     // Basado en MOEAD que gestiona restricciones.
     double minIDS = 0.0, maxIDS = 0.0;
@@ -103,11 +92,12 @@ void MOEAD_MPP::runGeneration() {
     // Updates the state of the algorithm
     updateReferencePoint(offSpring);
     updateNeighbouringSolution(offSpring, i, threshold);
-    offspringPop.push_back(offSpring->internalClone());
     delete (offSpring);
     offSpring = nullptr;
   }
-  updateSecondPopulation();
+  if (useArchive) {
+    updateSecondPopulation();
+  }
 }
 
 /**

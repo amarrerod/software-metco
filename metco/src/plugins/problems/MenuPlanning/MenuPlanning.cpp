@@ -48,7 +48,11 @@ vector<double> MenuPlanning::infoNPlan;
  *
  * Constructor por defecto de una instancia de MenuPlanning
  */
-MenuPlanning::MenuPlanning() { this->setFeasibility(0.0); }
+MenuPlanning::MenuPlanning() { 
+  this->setFeasibility(0.0); 
+  originalCost = 0.0;
+  originalRepetition = 0.0;
+}
 
 /**
  * Metodo para inicializar un individuo MenuPlanning
@@ -257,6 +261,8 @@ Individual *MenuPlanning::clone(void) const {
   mpp->badDays = {badDays};
   mpp->heaviestNut = heaviestNut;
   mpp->heaviestType = heaviestType;
+  mpp->originalCost = originalCost;
+  mpp->originalRepetition = originalRepetition;
   return mpp;
 }
 
@@ -372,25 +378,16 @@ void MenuPlanning::dependentLocalSearch() {
   }
   vector<double> bestIndividual = {var};
   evaluate();
-  // Normalizacion de los objetivos
-  double cost = getObj(0);  //((getObj(0) - minCost) / (maxCost - minCost));
-  double repetition = getObj(1);  //     ((getObj(1) - minRepetition)
-                                  //     /(maxRepetition - minRepetition));
-
   pair<double, double> bestResult =
       make_pair(getFeasibility(),
-                ((cost * getAuxData(0)) + (repetition * getAuxData(1))));
+                ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
 
   const int maxIterations = 100;
   for (int i = 0; i < maxIterations; i++) {
     evaluate();
-    // Normalizacion de los objetivos
-    cost = getObj(0);  //((getObj(0) - minCost) / (maxCost - minCost));
-    repetition = getObj(
-        1);  //((getObj(1) - minRepetition) / (maxRepetition - minRepetition));
     pair<double, double> currentResult =
         make_pair(getFeasibility(),
-                  ((cost * getAuxData(0)) + (repetition * getAuxData(1))));
+                  ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
     bool improved = true;
     while (improved) {
       improved = false;
@@ -399,13 +396,9 @@ void MenuPlanning::dependentLocalSearch() {
         int currentValue = var[neighbors[i].variable];
         var[neighbors[i].variable] = neighbors[i].newValue;
         evaluate();
-        // Normalizacion de los objetivos
-        cost = getObj(0);  //((getObj(0) - minCost) / (maxCost - minCost));
-        repetition = getObj(1);  //            ((getObj(1) - minRepetition) /
-                                 //            (maxRepetition - minRepetition));
-        pair<double, double> newResult =
-            make_pair(getFeasibility(),
-                      ((cost * getAuxData(0)) + (repetition * getAuxData(1))));
+        pair<double, double> newResult = make_pair(
+            getFeasibility(),
+            ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
         if (newResult >= currentResult) {
           var[neighbors[i].variable] = currentValue;
         } else {
@@ -644,8 +637,14 @@ void MenuPlanning::evaluate(void) {
 
   ultimos5GA.clear();
   gaElegidosAnterior.clear();
-  // Asignamos el valor de los objetivos
+  // Asignamos el valor de los objetivos y favtibilidad
   computeFeasibility();
+  // Normalizacion de los objetivos
+  originalCost = precioTotal;
+  originalRepetition = valTotal;
+
+  precioTotal = (precioTotal - minCost) / (maxCost - minCost);
+  valTotal = (valTotal - minRepetition) / (maxRepetition - minRepetition);
   setObj(0, precioTotal);
   setObj(1, valTotal);
 }
@@ -659,8 +658,7 @@ void MenuPlanning::evaluate(void) {
 void MenuPlanning::print(ostream &os) const {
   for (unsigned int i = 0; i < getNumberOfVar(); i++) os << getVar(i) << " ";
   os << this->getFeasibility() << " ";
-  for (unsigned int i = 0; i < getNumberOfObj(); i++) os << getObj(i) << " ";
-  os << std::endl;
+  os << originalCost << " " << originalRepetition << std::endl;
 }
 #endif
 
