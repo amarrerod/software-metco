@@ -103,9 +103,6 @@ class MOEAD_MPP : public EA {
   // External population
   vector<Individual *> *secondPopulation;
 
-  // Offspring population generated in each iteration
-  vector<Individual *> offspringPop;
-
   bool useArchive;
 
   // Private methods:
