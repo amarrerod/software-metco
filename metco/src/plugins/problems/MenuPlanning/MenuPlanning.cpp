@@ -80,13 +80,13 @@ bool MenuPlanning::init(const vector<string> &params) {
   alergenosPlan.assign(num_alerg, "0");
   incompatibilidadesPlan.assign(num_incomp, "0");
   // Definimos las variables de normalizacion segun el numero de dias
-  int idx = 0;
-  if (nDias == 40) {
-    idx = 1;
-  } else if (nDias == 60) {
-    idx = 2;
-  }
-  setObjectivesRanges(idx);
+  /*  int idx = 0;
+    if (nDias == 40) {
+      idx = 1;
+    } else if (nDias == 60) {
+      idx = 2;
+    }
+    setObjectivesRanges(idx);*/
   computeNeighbors();
   return true;
 }
@@ -417,14 +417,7 @@ void MenuPlanning::dependentLocalSearch() {
         // Si no ha mejorado nos quedamos con el valor anterior
         if (newResult >= currentResult) {
           var[neighbors[i].variable] = currentValue;
-        } /**
-           * En otro caso comparamos que haya mejorado la factibilidad.
-           * Tenemos que hacerlo manualmente porque el operador <= compara
-           * los dos valores en caso de igualdad en el primer atributo
-           * Además vamos a añadirle un criterio de mejora mínima.
-           */
-        else if ((newResult < currentResult) &&
-                 ((currentResult.first - newResult.first) > minImprove)) {
+        } else {
           improved = true;
           currentResult = newResult;
         }
@@ -662,11 +655,11 @@ void MenuPlanning::evaluate(void) {
   // Asignamos el valor de los objetivos y favtibilidad
   computeFeasibility();
   // Normalizacion de los objetivos
-  originalCost = precioTotal;
-  originalRepetition = valTotal;
+  // originalCost = precioTotal;
+  // originalRepetition = valTotal;
 
-  precioTotal = (precioTotal - minCost) / (maxCost - minCost);
-  valTotal = (valTotal - minRepetition) / (maxRepetition - minRepetition);
+  // precioTotal = (precioTotal - minCost) / (maxCost - minCost);
+  // valTotal = (valTotal - minRepetition) / (maxRepetition - minRepetition);
   setObj(0, precioTotal);
   setObj(1, valTotal);
 }
