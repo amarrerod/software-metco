@@ -1,7 +1,7 @@
 LFLAGS = -shared 
 OBJDIR = objdir
 SODIR = sodir
-LIBRARYDIR = library 
+LIBRARYDIR = library
 MIGRATIONTOPOLOGYDIR = ../../plugins/migrationTopologies/
 IFLAGS= -I../ -I$(MIGRATIONTOPOLOGYDIR)$(migrationTopology)/
 SO_FILE= $(SODIR)/$(migrationTopology).so
@@ -10,7 +10,7 @@ O_FILE= $(OBJDIR)/$(migrationTopology).o
 C_FILE:=$(MIGRATIONTOPOLOGYDIR)$(migrationTopology)/$(migrationTopology).cpp
 H_FILE:=$(MIGRATIONTOPOLOGYDIR)$(migrationTopology)/$(migrationTopology).h
 LIBRARY_C_FILE:=$(MIGRATIONTOPOLOGYDIR)$(migrationTopology)/$(migrationTopology).library.cpp
-LIBRARY_O_FILE:=$(migrationTopology).library.o
+LIBRARY_O_FILE:=$(LIBRARYDIR)/$(migrationTopology).library.o
 H_FILE:=$(MIGRATIONTOPOLOGYDIR)$(migrationTopology)/$(migrationTopology).h
 FILE_TO_CHANGE:=../complete.c
 OBJ_FILES:=$(OBJDIR)/MigrationTopology.reloc.o $(OBJDIR)/Individual.reloc.o $(OBJDIR)/utils.reloc.o $(OBJDIR)/Plugin.reloc.o
