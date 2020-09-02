@@ -18,6 +18,7 @@
 #include <bits/stdc++.h>
 
 #include <array>
+#include <chrono>
 #include <cmath>
 
 // Constantes del problema
@@ -44,6 +45,11 @@ vector<string> MenuPlanning::incompatibilidadesPlan;
 vector<int> MenuPlanning::gruposAlPlan;
 vector<double> MenuPlanning::infoNPlan;
 
+ostream &operator<<(ostream &os, pair<double, double> &p) {
+  os << "ID(S) = " << p.first << " Objs = " << p.second;
+  return os;
+}
+
 /**
  *
  * Constructor por defecto de una instancia de MenuPlanning
@@ -54,7 +60,10 @@ MenuPlanning::MenuPlanning() {
   originalRepetition = 0.0;
 }
 
-MenuPlanning::~MenuPlanning() { neighbors.clear(); }
+MenuPlanning::~MenuPlanning() {
+  badDays.clear();
+  badDays.shrink_to_fit();
+}
 
 /**
  * Metodo para inicializar un individuo MenuPlanning
@@ -87,28 +96,20 @@ bool MenuPlanning::init(const vector<string> &params) {
       idx = 2;
     }
     setObjectivesRanges(idx);*/
-  computeNeighbors();
+  /* neighbors.reserve(nDias * (NPLATOS[0] + NPLATOS[1] + NPLATOS[2]));
+   for (int i = 0; i < nDias; i++) {
+     for (int j = 0; j < 3; j++) {
+       for (int k = 0; k < NPLATOS[j]; k++) {
+         Neighbor n;
+         n.variable = i * 3 + j;
+         n.newValue = k;
+         neighbors.emplace_back(n);
+       }
+     }
+   }*/
   return true;
 }
 
-/**
- * Realizamos el cálculo de los vecinos en términos de platos
- * para la ILS
- * Como no va a cambiar, podemos realizarlo una única vez
- */
-void MenuPlanning::computeNeighbors() {
-  neighbors.reserve(nDias * (NPLATOS[0] + NPLATOS[1] + NPLATOS[2]));
-  for (int i = 0; i < nDias; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < NPLATOS[j]; k++) {
-        Neighbor n;
-        n.variable = i * 3 + j;
-        n.newValue = k;
-        neighbors.push_back(n);
-      }
-    }
-  }
-}
 /**
  *
  *
@@ -284,10 +285,7 @@ Individual *MenuPlanning::clone(void) const {
   mpp->heaviestType = heaviestType;
   mpp->originalCost = originalCost;
   mpp->originalRepetition = originalRepetition;
-  mpp->neighbors.reserve(neighbors.size());
-  for (unsigned i = 0; i < neighbors.size(); i++) {
-    mpp->neighbors[i] = Neighbor(neighbors[i]);
-  }
+
   return mpp;
 }
 
@@ -390,31 +388,40 @@ void MenuPlanning::pairBasedCrossover(Individual *i2) {
  *
  **/
 void MenuPlanning::dependentLocalSearch() {
-  vector<double> bestIndividual = {var};
+  const double minImprove = 0.01;
+  vector<Neighbor> neighbors;
+  for (int i = 0; i < nDias; i++) {
+    for (int j = 0; j < 3; j++) {
+      for (int k = 0; k < NPLATOS[j]; k++) {
+        Neighbor n;
+        n.variable = i * 3 + j;
+        n.newValue = k;
+        neighbors.push_back(n);
+      }
+    }
+  }
+  vector<double> bestIndividual = var;
   evaluate();
-  pair<double, double> bestResult =
-      make_pair(getFeasibility(),
-                ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
-
-  const int maxIterations = 50;
-  const double minImprove = 1e-2;
-  for (int i = 0; i < maxIterations; i++) {
+  pair<double, double> bestResult = pair<double, double>(
+      getFeasibility(),
+      ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
+  for (int i = 0; i < 100; i++) {
     evaluate();
-    pair<double, double> currentResult =
-        make_pair(getFeasibility(),
-                  ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
+    pair<double, double> currentResult = pair<double, double>(
+        getFeasibility(),
+        ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
+
     bool improved = true;
     while (improved) {
       improved = false;
       random_shuffle(neighbors.begin(), neighbors.end());
-      for (int i = 0; i < neighbors.size(); i++) {
+      for (int i = 0, length = neighbors.size(); i < length; ++i) {
         int currentValue = var[neighbors[i].variable];
         var[neighbors[i].variable] = neighbors[i].newValue;
         evaluate();
-        pair<double, double> newResult = make_pair(
+        pair<double, double> newResult = pair<double, double>(
             getFeasibility(),
             ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
-        // Si no ha mejorado nos quedamos con el valor anterior
         if (newResult >= currentResult) {
           var[neighbors[i].variable] = currentValue;
         } else {
@@ -424,12 +431,11 @@ void MenuPlanning::dependentLocalSearch() {
       }
     }
     if (currentResult >= bestResult) {
-      var = {bestIndividual};
+      var = bestIndividual;
     } else {
       bestResult = currentResult;
-      bestIndividual = {var};
+      bestIndividual = var;
     }
-
     evaluate();
     if (badDays.size() == 0) {
       if (heaviestNut != -1) {
@@ -438,17 +444,14 @@ void MenuPlanning::dependentLocalSearch() {
           double total = v_primerosPlatos[var[i * 3]].infoN[heaviestNut] +
                          v_segundosPlatos[var[i * 3 + 1]].infoN[heaviestNut] +
                          v_postres[var[i * 3 + 2]].infoN[heaviestNut];
-          infoNut.push_back(make_pair(total, i));
+          infoNut.push_back(pair<double, int>(total, i));
         }
         sort(infoNut.begin(), infoNut.end());
-        if (heaviestType == 1) {
-          reverse(infoNut.begin(), infoNut.end());
-        }
+        if (heaviestType == 1) reverse(infoNut.begin(), infoNut.end());
         int selectedDay = infoNut[random() % 6].second;
         var[selectedDay * 3] = (rand() % NPLATOS[0]);
         var[selectedDay * 3 + 1] = (rand() % NPLATOS[1]);
         var[selectedDay * 3 + 2] = (rand() % NPLATOS[2]);
-        infoNut.clear();
       } else {
         int selectedDay = random() % nDias;
         var[selectedDay * 3] = (rand() % NPLATOS[0]);
@@ -456,14 +459,14 @@ void MenuPlanning::dependentLocalSearch() {
         var[selectedDay * 3 + 2] = (rand() % NPLATOS[2]);
       }
     } else {
-      for (int i = 0; i < badDays.size(); i++) {
-        int day = badDays[i];
+      for (auto it = badDays.begin(); it != badDays.end(); it++) {
+        int day = *it;
         int which = random() % 3;
         var[day * 3 + which] = (rand() % NPLATOS[which]);
       }
     }
   }
-  var = {bestIndividual};
+  var = bestIndividual;
   evaluate();
 }
 
@@ -505,9 +508,9 @@ double MenuPlanning::computeFeasibility() {
 
     // Primero obtenemos la cantidad de nutrientes de cada dia
     for (unsigned int j = 0; j < num_nutr; j++) {
-      dayNutr[j] += v_primerosPlatos[round(getVar(idx))].infoN[j];
-      dayNutr[j] += v_segundosPlatos[round(getVar(idx + 1))].infoN[j];
-      dayNutr[j] += v_postres[round(getVar(idx + 2))].infoN[j];
+      dayNutr[j] += v_primerosPlatos[getVar(idx)].infoN[j];
+      dayNutr[j] += v_segundosPlatos[getVar(idx + 1)].infoN[j];
+      dayNutr[j] += v_postres[getVar(idx + 2)].infoN[j];
       infoNPlan[j] += dayNutr[j];
     }
     // Calculamos los nutrientes forzados por dia
@@ -557,7 +560,7 @@ double MenuPlanning::computeFeasibility() {
     }
   }
 
-  feasibility = feasibility * 1e12;
+  feasibility *= 1e12;
 
   // devolvemos id(S) = did(S) + gid(S)
   return feasibility;
@@ -584,7 +587,6 @@ void MenuPlanning::evaluate(void) {
   vector<int> gaElegidosAnterior;
   vector<vector<int>> ultimos5GA;
   int x = 0;
-
   for (int i = 0; i < nDias; i++) {
     x = i * num_tipoPlato;
     // Coste del menu
@@ -649,19 +651,17 @@ void MenuPlanning::evaluate(void) {
     gaElegidosAnterior = gaElegidos;
     gaElegidos.clear();
   }
-
-  ultimos5GA.clear();
-  gaElegidosAnterior.clear();
   // Asignamos el valor de los objetivos y favtibilidad
   computeFeasibility();
   // Normalizacion de los objetivos
   // originalCost = precioTotal;
   // originalRepetition = valTotal;
-
   // precioTotal = (precioTotal - minCost) / (maxCost - minCost);
   // valTotal = (valTotal - minRepetition) / (maxRepetition - minRepetition);
   setObj(0, precioTotal);
   setObj(1, valTotal);
+  ultimos5GA.clear();
+  gaElegidosAnterior.clear();
 }
 
 #ifdef __MPP_PRINT_ID_S__
@@ -673,7 +673,7 @@ void MenuPlanning::evaluate(void) {
 void MenuPlanning::print(ostream &os) const {
   for (unsigned int i = 0; i < getNumberOfVar(); i++) os << getVar(i) << " ";
   os << this->getFeasibility() << " ";
-  os << originalCost << " " << originalRepetition << std::endl;
+  os << getObj(0) << " " << getObj(1) << std::endl;
 }
 #endif
 
@@ -787,7 +787,8 @@ void MenuPlanning::set_ultimos5GA(vector<vector<int>> &ultimos5GA,
 
 double MenuPlanning::set_ValorGAFirstAlternativa(
     vector<vector<int>> &ultimos5GA, vector<int> vec) {
-  /* 0 Otros, 1 Carne, 2 Cereal, 3 Fruta, 4 Lacteo, 5 Legumbre, 6 Marisco, 7
+  /*
+   * 0 Otros, 1 Carne, 2 Cereal, 3 Fruta, 4 Lacteo, 5 Legumbre, 6 Marisco, 7
    * Pasta, 8 Pescado, 9 Verdura */
   double penalizacionPorGA[10] = {penalizaciones[0], penalizaciones[1],
                                   penalizaciones[2], penalizaciones[3],

@@ -61,8 +61,8 @@ void MOEAD_MPP::fillPopWithNewIndsAndEvaluate() {
 
     ind->restart();
     ind->dependentLocalSearch();
-    evaluate(ind);
     population->push_back(ind);
+    updateReferencePoint(ind);
   }
 }
 
@@ -90,6 +90,13 @@ void MOEAD_MPP::runGeneration() {
   if (useArchive) {
     updateSecondPopulation();
   }
+#ifdef __MOEAD_MPP_DEBUG__
+  std::cout << "\tGeneration: " << getGeneration()
+            << "\tEvals: " << getPerformedEvaluations() << "\tReference Point ("
+            << referencePoint->getObj(0) << "," << referencePoint->getObj(1)
+            << ")"
+            << "\tID(RP) = " << referencePoint->getFeasibility() << std::endl;
+#endif
 }
 
 /**
@@ -280,15 +287,14 @@ Individual *MOEAD_MPP::createOffspring(const int &i) {
 void MOEAD_MPP::updateReferencePoint(Individual *ind) {
   bool update = false;
   const double epsilon = 0.0001;
-  const double chances = 0.1;
-
   // Si mejora la factibilidad nos quedamos con este punto de referencia
   if (ind->getFeasibility() < referencePoint->getFeasibility()) {
     update = true;
     // En caso de igualar ID lo cambiamos con cierta probabilidad
   } else if ((abs(ind->getFeasibility() - referencePoint->getFeasibility()) <
               epsilon) &&
-             ((rand() / RAND_MAX) < chances)) {
+             ((ind->getObj(0) <= referencePoint->getObj(0)) &&
+              (ind->getObj(1) <= referencePoint->getObj(1)))) {
     update = true;
   }
   // Si mejoramos o igualamos el ID actualizamos el RP
@@ -454,4 +460,5 @@ void MOEAD_MPP::printInfo(ostream &os) const {
   os << "Neighbourhood size (T) = " << getNeighbourhoodSize() << endl;
   os << "Mutation rate = " << pm << endl;
   os << "Crossover rate = " << pc << endl;
+  os << "Using Archive = " << std::boolalpha << useArchive << std::endl;
 }
