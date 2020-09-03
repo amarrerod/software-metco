@@ -87,7 +87,8 @@ class MenuPlanning : public Individual {
   double heaviestNut;
   double heaviestType;
   double originalCost, originalRepetition;
-  // vector<Neighbor> neighbors;
+  bool partial;
+  double requiredFeasibility;
 
   // Variables para la normalizacion de objetivos en la ILS
   static double minCost, maxCost;

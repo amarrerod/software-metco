@@ -94,8 +94,7 @@ void MOEAD_MPP::runGeneration() {
   std::cout << "\tGeneration: " << getGeneration()
             << "\tEvals: " << getPerformedEvaluations() << "\tReference Point ("
             << referencePoint->getObj(0) << "," << referencePoint->getObj(1)
-            << ")"
-            << "\tID(RP) = " << referencePoint->getFeasibility() << std::endl;
+            << ")" << std::endl;
 #endif
 }
 
@@ -272,6 +271,9 @@ Individual *MOEAD_MPP::createOffspring(const int &i) {
   // Potential improvement: mutate p2 and select the best individual from both
   // p1 and p2
   p1->mutation(pm);
+  // Copiamos los pesos para poder realizar la ILS
+  p1->setAuxData(0, weightVector[i][0]);
+  p1->setAuxData(1, weightVector[i][1]);
   evaluate(p1);
   p1->dependentLocalSearch();
   // Free memory
@@ -285,24 +287,15 @@ Individual *MOEAD_MPP::createOffspring(const int &i) {
  * si hemos encontrado nuevos optimos
  **/
 void MOEAD_MPP::updateReferencePoint(Individual *ind) {
-  bool update = false;
-  const double epsilon = 0.0001;
-  // Si mejora la factibilidad nos quedamos con este punto de referencia
-  if (ind->getFeasibility() < referencePoint->getFeasibility()) {
-    update = true;
-    // En caso de igualar ID lo cambiamos con cierta probabilidad
-  } else if ((abs(ind->getFeasibility() - referencePoint->getFeasibility()) <
-              epsilon) &&
-             ((ind->getObj(0) <= referencePoint->getObj(0)) &&
-              (ind->getObj(1) <= referencePoint->getObj(1)))) {
-    update = true;
-  }
-  // Si mejoramos o igualamos el ID actualizamos el RP
-  if (update) {
-    for (int i = 0; i < getNumberOfObj(); i++) {
-      referencePoint->setObj(i, ind->getObj(i));
+  // Si no es factible lo descartamos directamente
+  if (ind->getFeasibility() != 0.0) {
+    return;
+  } else {
+    for (unsigned i = 0; i < ind->getNumberOfObj(); i++) {
+      if (ind->getObj(i) < referencePoint->getObj(i)) {
+        referencePoint->setObj(i, ind->getObj(i));
+      }
     }
-    referencePoint->setFeasibility(ind->getFeasibility());
   }
 }
 
@@ -388,6 +381,9 @@ void MOEAD_MPP::updateNeighbouringSolution(Individual *offspring, const int &i,
     if (update) {
       delete ((*population)[idx]);
       (*population)[idx] = offspring->internalClone();
+      // Se copian los pesos para poder aplicar la ILS
+      (*population)[idx]->setAuxData(0, weightVector[idx][0]);
+      (*population)[idx]->setAuxData(1, weightVector[idx][1]);
       // Solo permitimos el reemplazo de un individuo
       break;
     }
@@ -404,6 +400,7 @@ double MOEAD_MPP::computingFitnessValue(Individual *ind, vector<double> &lambda,
   double fitness = std::numeric_limits<double>::min();
   const double scaling1 = 0.01;
   const double scaling2 = 20;
+  const double eps = 0.0001;
   double penalty = 0.0;
   // Calculamos la penalizacion que le corresponde
   if (ind->getFeasibility() < threshold) {
@@ -413,11 +410,13 @@ double MOEAD_MPP::computingFitnessValue(Individual *ind, vector<double> &lambda,
               scaling2 * (ind->getFeasibility() - threshold);
   }
   for (int i = 0; i < getNumberOfObj(); i++) {
-    double dif = 1.1 * referencePoint->getObj(i) - ind->getObj(i);
-    double s = lambda[i] * (dif > 0 ? dif : -dif);
-    // A la funcion Tchebycheff le añadimos el factor de penalizacion
-    fitness = s + penalty;
+    double diff = abs(ind->getObj(i) - referencePoint->getObj(i));
+    double eval = (lambda[i] == 0) ? (eps * diff) : (lambda[i] * diff);
+    if (eval > fitness) {
+      fitness = eval;
+    }
   }
+  fitness += penalty;
   return fitness;
 }
 

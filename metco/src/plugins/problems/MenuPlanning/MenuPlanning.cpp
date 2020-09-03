@@ -58,6 +58,8 @@ MenuPlanning::MenuPlanning() {
   this->setFeasibility(0.0);
   originalCost = 0.0;
   originalRepetition = 0.0;
+  partial = false;
+  requiredFeasibility = std::numeric_limits<double>::max();
 }
 
 MenuPlanning::~MenuPlanning() {
@@ -96,17 +98,6 @@ bool MenuPlanning::init(const vector<string> &params) {
       idx = 2;
     }
     setObjectivesRanges(idx);*/
-  /* neighbors.reserve(nDias * (NPLATOS[0] + NPLATOS[1] + NPLATOS[2]));
-   for (int i = 0; i < nDias; i++) {
-     for (int j = 0; j < 3; j++) {
-       for (int k = 0; k < NPLATOS[j]; k++) {
-         Neighbor n;
-         n.variable = i * 3 + j;
-         n.newValue = k;
-         neighbors.emplace_back(n);
-       }
-     }
-   }*/
   return true;
 }
 
@@ -285,7 +276,8 @@ Individual *MenuPlanning::clone(void) const {
   mpp->heaviestType = heaviestType;
   mpp->originalCost = originalCost;
   mpp->originalRepetition = originalRepetition;
-
+  mpp->partial = partial;
+  mpp->requiredFeasibility = requiredFeasibility;
   return mpp;
 }
 
@@ -406,6 +398,7 @@ void MenuPlanning::dependentLocalSearch() {
       getFeasibility(),
       ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
   for (int i = 0; i < 100; i++) {
+    partial = false;
     evaluate();
     pair<double, double> currentResult = pair<double, double>(
         getFeasibility(),
@@ -418,7 +411,10 @@ void MenuPlanning::dependentLocalSearch() {
       for (int i = 0, length = neighbors.size(); i < length; ++i) {
         int currentValue = var[neighbors[i].variable];
         var[neighbors[i].variable] = neighbors[i].newValue;
+        partial = true;
+        requiredFeasibility = currentResult.first;
         evaluate();
+        partial = false;
         pair<double, double> newResult = pair<double, double>(
             getFeasibility(),
             ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
@@ -579,6 +575,12 @@ void MenuPlanning::evaluate(void) {
   double numSP = penalizaciones[16];
   double numP = penalizaciones[17];
 
+  computeFeasibility();
+  // partial = false;
+  if (partial && (getFeasibility() > requiredFeasibility)) {
+    return;
+  }
+
   double valTotal = 0;
   // Vector que guarda los grupos alimenticios pertenecientes a los platos
   // elegidos
@@ -652,7 +654,7 @@ void MenuPlanning::evaluate(void) {
     gaElegidos.clear();
   }
   // Asignamos el valor de los objetivos y favtibilidad
-  computeFeasibility();
+  // computeFeasibility();
   // Normalizacion de los objetivos
   // originalCost = precioTotal;
   // originalRepetition = valTotal;
