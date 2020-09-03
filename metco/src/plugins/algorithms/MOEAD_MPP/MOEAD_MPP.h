@@ -129,15 +129,11 @@ class MOEAD_MPP : public EA {
 
   // Compares a novel offspring to its neighboring solutions in order to update
   // the neighbourhood
-  void updateNeighbouringSolution(Individual *ind, const int &i,
-                                  const double &);
+  void updateParentSolution(Individual *ind, const int &i);
 
   // Computes the fitness value of a particular individual by considering the
   // Tchebycheff approach
-  double computingFitnessValue(Individual *ind, vector<double> &lambda,
-                               const double &);
-
-  void computeIDRanges(double &minIDS, double &maxIDS);
+  double computingFitnessValue(Individual *ind, vector<double> &lambda);
 
   double computeClosesDistance(const unsigned int &i);
 
