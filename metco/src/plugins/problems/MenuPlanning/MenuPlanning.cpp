@@ -45,11 +45,6 @@ vector<string> MenuPlanning::incompatibilidadesPlan;
 vector<int> MenuPlanning::gruposAlPlan;
 vector<double> MenuPlanning::infoNPlan;
 
-ostream &operator<<(ostream &os, pair<double, double> &p) {
-  os << "ID(S) = " << p.first << " Objs = " << p.second;
-  return os;
-}
-
 /**
  *
  * Constructor por defecto de una instancia de MenuPlanning
@@ -91,13 +86,13 @@ bool MenuPlanning::init(const vector<string> &params) {
   alergenosPlan.assign(num_alerg, "0");
   incompatibilidadesPlan.assign(num_incomp, "0");
   // Definimos las variables de normalizacion segun el numero de dias
-  /*  int idx = 0;
-    if (nDias == 40) {
-      idx = 1;
-    } else if (nDias == 60) {
-      idx = 2;
-    }
-    setObjectivesRanges(idx);*/
+  int idx = 0;
+  if (nDias == 40) {
+    idx = 1;
+  } else if (nDias == 60) {
+    idx = 2;
+  }
+  setObjectivesRanges(idx);
   return true;
 }
 
@@ -655,13 +650,11 @@ void MenuPlanning::evaluate(void) {
     gaElegidosAnterior = gaElegidos;
     gaElegidos.clear();
   }
-  // Asignamos el valor de los objetivos y favtibilidad
-  // computeFeasibility();
   // Normalizacion de los objetivos
-  // originalCost = precioTotal;
-  // originalRepetition = valTotal;
-  // precioTotal = (precioTotal - minCost) / (maxCost - minCost);
-  // valTotal = (valTotal - minRepetition) / (maxRepetition - minRepetition);
+  originalCost = precioTotal;
+  originalRepetition = valTotal;
+  precioTotal = (precioTotal - minCost) / (maxCost - minCost);
+  valTotal = (valTotal - minRepetition) / (maxRepetition - minRepetition);
   setObj(0, precioTotal);
   setObj(1, valTotal);
   ultimos5GA.clear();
@@ -677,7 +670,7 @@ void MenuPlanning::evaluate(void) {
 void MenuPlanning::print(ostream &os) const {
   for (unsigned int i = 0; i < getNumberOfVar(); i++) os << getVar(i) << " ";
   os << this->getFeasibility() << " ";
-  os << getObj(0) << " " << getObj(1) << std::endl;
+  os << originalCost << " " << originalRepetition << std::endl;
 }
 #endif
 

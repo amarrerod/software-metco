@@ -88,9 +88,18 @@ void MOEAD_MPP::runGeneration() {
   }
 #ifdef __MOEAD_MPP_DEBUG__
   std::cout << "\tGeneration: " << getGeneration()
-            << "\tEvals: " << getPerformedEvaluations() << "\tReference Point ("
-            << referencePoint->getObj(0) << "," << referencePoint->getObj(1)
-            << ")" << std::endl;
+            << "\tEvals: " << getPerformedEvaluations() << std::endl;
+  std::cout << "\tPopulation size = " << getPopulationSize() << std::endl;
+  for (unsigned i = 0; i < getPopulationSize(); i++) {
+    std::cout << "\t" << i << ") ";
+    (*population)[i]->print(std::cout);
+  }
+  std::cout << "\tArchive size = " << secondPopulation->size() << std::endl;
+  for (unsigned i = 0; i < secondPopulation->size(); i++) {
+    std::cout << "\t" << i << ") ";
+    (*secondPopulation)[i]->print(std::cout);
+  }
+  std::cout << "\t========================================" << std::endl;
 #endif
 }
 
