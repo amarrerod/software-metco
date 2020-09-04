@@ -389,15 +389,13 @@ void MenuPlanning::dependentLocalSearch() {
   }
   vector<double> bestIndividual = var;
   evaluate();
-  pair<double, double> bestResult = pair<double, double>(
-      getFeasibility(),
-      ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
+  pair<double, double> bestResult =
+      pair<double, double>(getFeasibility(), computingFitnessValue());
   for (int i = 0; i < 100; i++) {
     partial = false;
     evaluate();
-    pair<double, double> currentResult = pair<double, double>(
-        getFeasibility(),
-        ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
+    pair<double, double> currentResult =
+        pair<double, double>(getFeasibility(), computingFitnessValue());
 
     bool improved = true;
     while (improved) {
@@ -410,9 +408,8 @@ void MenuPlanning::dependentLocalSearch() {
         requiredFeasibility = currentResult.first;
         evaluate();
         partial = false;
-        pair<double, double> newResult = pair<double, double>(
-            getFeasibility(),
-            ((getObj(0) * getAuxData(0)) + (getObj(1) * getAuxData(1))));
+        pair<double, double> newResult =
+            pair<double, double>(getFeasibility(), computingFitnessValue());
         if (newResult >= currentResult) {
           var[neighbors[i].variable] = currentValue;
         } else {
@@ -461,6 +458,19 @@ void MenuPlanning::dependentLocalSearch() {
   evaluate();
   neighbors.clear();
   neighbors.shrink_to_fit();
+}
+
+/**
+ * Computes the fitness value of a particular individual by considering the
+ * Tchebycheff approach
+ *
+ **/
+double MenuPlanning::computingFitnessValue() {
+  // getAuxData(2) es el obj0 del punto de referencia
+  // getAuxData(3) es el obj1 del punto de referencia
+  double f1 = (abs(getObj(0) - getAuxData(2))) * getAuxData(0);
+  double f2 = (abs(getObj(1) - getAuxData(3))) * getAuxData(1);
+  return (f1 > f2) ? f1 : f2;
 }
 
 /*-------------------------------------------*/

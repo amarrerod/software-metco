@@ -29,7 +29,7 @@
 #include "Individual.h"
 #include "MOFront.h"
 
-#define __MOEAD_MPP_DEBUG__
+//#define __MOEAD_MPP_DEBUG__
 
 using namespace std;
 
@@ -122,7 +122,7 @@ class MOEAD_MPP : public EA {
   Individual *createOffspring(const int &i);
 
   // Updates the reference point
-  void updateReferencePoint(Individual *ind);
+  void updateReferencePoint(Individual *ind, bool copy = false);
 
   // Updates the external population with non-dominated solutions
   void updateSecondPopulation(Individual *);

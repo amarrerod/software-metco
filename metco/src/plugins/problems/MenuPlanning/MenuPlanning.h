@@ -106,6 +106,7 @@ class MenuPlanning : public Individual {
   void restart(void);             // Generacion aleatoria del individuos
   void set_gruposAl(void);        // Metodo que define los grupos de alimentos
   double computeFeasibility();    // Calcula la factibilidad de los individuos
+  double computingFitnessValue();
 
   static void setObjectivesRanges(const int &);
 

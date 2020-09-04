@@ -55,14 +55,14 @@ void MOEAD_MPP::fillPopWithNewIndsAndEvaluate() {
   const int NUM_OBJS = 2;
   for (int i = population->size(); i < getPopulationSize(); i++) {
     Individual *ind = getSampleInd()->internalClone();
-    ind->setAuxDataSize(NUM_OBJS);
+    ind->setAuxDataSize(NUM_OBJS * NUM_OBJS);
     ind->setAuxData(0, weightVector[i][0]);
     ind->setAuxData(1, weightVector[i][1]);
 
     ind->restart();
     ind->dependentLocalSearch();
-    population->push_back(ind);
     updateReferencePoint(ind);
+    population->push_back(ind);
   }
 }
 
@@ -78,7 +78,7 @@ void MOEAD_MPP::runGeneration() {
     // Creates a new offspring by applying the variation operators
     Individual *offSpring = createOffspring(i);
     // Updates the state of the algorithm
-    updateReferencePoint(offSpring);
+    updateReferencePoint(offSpring, true);
     updateParentSolution(offSpring, i);
     if (useArchive) {
       updateSecondPopulation(offSpring);
@@ -167,7 +167,6 @@ void MOEAD_MPP::initialiseReferencePoint() {
   } else {
     referencePoint->setObj(1, std::numeric_limits<double>::min());
   }
-  referencePoint->setFeasibility(std::numeric_limits<double>::max());
 }
 
 /**
@@ -258,6 +257,8 @@ Individual *MOEAD_MPP::createOffspring(const int &i) {
   // Copiamos los pesos para poder realizar la ILS
   p1->setAuxData(0, weightVector[i][0]);
   p1->setAuxData(1, weightVector[i][1]);
+  p1->setAuxData(2, referencePoint->getObj(0));
+  p1->setAuxData(3, referencePoint->getObj(1));
   evaluate(p1);
   p1->dependentLocalSearch();
   // Free memory
@@ -270,7 +271,7 @@ Individual *MOEAD_MPP::createOffspring(const int &i) {
  * Método que actualiza el punto de referencia
  * si hemos encontrado nuevos optimos
  **/
-void MOEAD_MPP::updateReferencePoint(Individual *ind) {
+void MOEAD_MPP::updateReferencePoint(Individual *ind, bool copy) {
   // Si no es factible lo descartamos directamente
   if (ind->getFeasibility() != 0.0) {
     return;
@@ -278,6 +279,13 @@ void MOEAD_MPP::updateReferencePoint(Individual *ind) {
     for (unsigned i = 0; i < ind->getNumberOfObj(); i++) {
       if (ind->getObj(i) < referencePoint->getObj(i)) {
         referencePoint->setObj(i, ind->getObj(i));
+      }
+    }
+    // Copiamos el RP para cada individuo
+    if (copy) {
+      for (unsigned int i = 0; i < getPopulationSize(); i++) {
+        (*population)[i]->setAuxData(2, referencePoint->getObj(0));
+        (*population)[i]->setAuxData(3, referencePoint->getObj(1));
       }
     }
   }
@@ -345,6 +353,8 @@ void MOEAD_MPP::updateParentSolution(Individual *offspring, const int &i) {
     // Se copian los pesos para poder aplicar la ILS
     (*population)[i]->setAuxData(0, weightVector[i][0]);
     (*population)[i]->setAuxData(1, weightVector[i][1]);
+    (*population)[i]->setAuxData(2, referencePoint->getObj(0));
+    (*population)[i]->setAuxData(3, referencePoint->getObj(1));
   }
 }
 
