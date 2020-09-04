@@ -15,7 +15,7 @@
 
 const int MOEAD_MPP::INITIAL_GENERATION = 0;
 const int MOEAD_MPP::NUM_PARAMS = 6;
-
+const double MOEAD_MPP::EPSILON = 1e-9;
 // Constructor
 MOEAD_MPP::MOEAD_MPP() { secondPopulation = new vector<Individual *>; }
 
@@ -80,11 +80,11 @@ void MOEAD_MPP::runGeneration() {
     // Updates the state of the algorithm
     updateReferencePoint(offSpring);
     updateParentSolution(offSpring, i);
+    if (useArchive) {
+      updateSecondPopulation(offSpring);
+    }
     delete (offSpring);
     offSpring = nullptr;
-  }
-  if (useArchive) {
-    updateSecondPopulation();
   }
 #ifdef __MOEAD_MPP_DEBUG__
   std::cout << "\tGeneration: " << getGeneration()
@@ -127,16 +127,15 @@ bool MOEAD_MPP::init(const vector<string> &params) {
  * - Archivo o población principal según configuracion
  */
 void MOEAD_MPP::getSolution(MOFront *p) {
-  const double epsilon = 0.00001;
   if (useArchive) {
     for (unsigned int i = 0; i < secondPopulation->size(); i++) {
-      if (abs((*secondPopulation)[i]->getFeasibility() - 0.0) < epsilon) {
+      if (abs((*secondPopulation)[i]->getFeasibility() - 0.0) < EPSILON) {
         p->insert((*secondPopulation)[i]);
       }
     }
   } else {
     for (unsigned int i = 0; i < getPopulationSize(); i++) {
-      if (abs((*population)[i]->getFeasibility() - 0.0) < epsilon) {
+      if (abs((*population)[i]->getFeasibility() - 0.0) < EPSILON) {
         p->insert((*population)[i]);
       }
     }
@@ -279,55 +278,36 @@ void MOEAD_MPP::updateReferencePoint(Individual *ind) {
  * Metodo para actualizar la poblacion secundaria eliminando los individuos
  * dominados por el individuo que recibe como parametro
  **/
-void MOEAD_MPP::updateSecondPopulation() {
-  const double epsilon = 0.0001;
+void MOEAD_MPP::updateSecondPopulation(Individual *ind) {
   // Removes from the external population all those individuals dominated by
   // individual ind
-  for (Individual *ind : (*population)) {
-    unsigned int i = 0;
-    while (i < secondPopulation->size()) {
-      // Primero comprobamos la factibilidad
-      bool remove = false;
-      if (ind->getFeasibility() < (*secondPopulation)[i]->getFeasibility()) {
-        remove = true;
-        // En caso de igualar comprobamos que lo domina
-      } else {
-        if ((abs(ind->getFeasibility() -
-                 (*secondPopulation)[i]->getFeasibility()) < epsilon) &&
-            (dominanceTest((*secondPopulation)[i], ind) == SECOND_DOMINATES)) {
-          remove = true;
-        }
-      }
-      // Eliminamos si procede
-      if (remove) {
-        delete ((*secondPopulation)[i]);
-        (*secondPopulation)[i] =
-            (*secondPopulation)[secondPopulation->size() - 1];
-        secondPopulation->pop_back();
-      } else
-        i++;
-    }
-
-    // Adds individual ind to the external population if no individual in the
-    // said population dominates it
-    bool insert = true;
-    i = 0;
-    while (i < secondPopulation->size()) {
-      if ((*secondPopulation)[i]->getFeasibility() < ind->getFeasibility()) {
-        insert = false;
-        break;
-      } else {
-        if ((abs(ind->getFeasibility() -
-                 (*secondPopulation)[i]->getFeasibility()) < epsilon) &&
-            (dominanceTest((*secondPopulation)[i], ind) == FIRST_DOMINATES)) {
-          insert = false;
-          break;
-        }
-      }
-      i++;
-    }
-    if (insert) secondPopulation->push_back(ind->internalClone());
+  if (ind->getFeasibility() != 0.0) {
+    return;
   }
+  unsigned int i = 0;
+  // Removes from the external population all those individuals dominated by
+  // individual ind
+  while (i < secondPopulation->size()) {
+    if (dominanceTest((*secondPopulation)[i], ind) == SECOND_DOMINATES) {
+      delete ((*secondPopulation)[i]);
+      (*secondPopulation)[i] =
+          (*secondPopulation)[secondPopulation->size() - 1];
+      secondPopulation->pop_back();
+    } else
+      i++;
+  }
+  // Adds individual ind to the external population if no individual in the said
+  // population dominates it
+  bool insert = true;
+  i = 0;
+  while (i < secondPopulation->size()) {
+    if (dominanceTest((*secondPopulation)[i], ind) == FIRST_DOMINATES) {
+      insert = false;
+      break;
+    }
+    i++;
+  }
+  if (insert) secondPopulation->push_back(ind->internalClone());
 }
 
 /**
@@ -367,10 +347,8 @@ void MOEAD_MPP::updateParentSolution(Individual *offspring, const int &i) {
 double MOEAD_MPP::computingFitnessValue(Individual *ind,
                                         vector<double> &lambda) {
   double fitness = std::numeric_limits<double>::min();
-  const double eps = 0.0001;
   for (int i = 0; i < getNumberOfObj(); i++) {
-    double diff = abs(ind->getObj(i) - referencePoint->getObj(i));
-    double eval = (lambda[i] == 0) ? (eps * diff) : (lambda[i] * diff);
+    double eval = (abs(ind->getObj(i) - referencePoint->getObj(i))) * lambda[i];
     if (eval > fitness) {
       fitness = eval;
     }

@@ -125,7 +125,7 @@ class MOEAD_MPP : public EA {
   void updateReferencePoint(Individual *ind);
 
   // Updates the external population with non-dominated solutions
-  void updateSecondPopulation();
+  void updateSecondPopulation(Individual *);
 
   // Compares a novel offspring to its neighboring solutions in order to update
   // the neighbourhood
@@ -148,6 +148,7 @@ class MOEAD_MPP : public EA {
  private:
   const static int INITIAL_GENERATION;
   const static int NUM_PARAMS;
+  const static double EPSILON;
 };
 
 #endif
