@@ -10,28 +10,25 @@
 #include "MOEAD_MPP.h"
 
 #include <algorithm>
+#include <chrono>
 #include <limits>
 
 const int MOEAD_MPP::INITIAL_GENERATION = 0;
-const int MOEAD_MPP::NUM_PARAMS = 5;
-
+const int MOEAD_MPP::NUM_PARAMS = 6;
+const double MOEAD_MPP::EPSILON = 1e-9;
 // Constructor
 MOEAD_MPP::MOEAD_MPP() { secondPopulation = new vector<Individual *>; }
 
 // Destructor
 MOEAD_MPP::~MOEAD_MPP(void) {
-  for (int i = 0; i < secondPopulation->size(); i++)
-    delete (*secondPopulation)[i];
-  delete (secondPopulation);
-  secondPopulation->shrink_to_fit();
-
-  for (unsigned i = 0; i < offspringPop.size(); i++) {
-    if (offspringPop[i] != nullptr) {
-      delete (offspringPop[i]);
+  for (int i = 0; i < secondPopulation->size(); i++) {
+    if ((*secondPopulation)[i] != nullptr) {
+      delete (*secondPopulation)[i];
+      (*secondPopulation)[i] = nullptr;
     }
   }
-  offspringPop.clear();
-  offspringPop.shrink_to_fit();
+  delete (secondPopulation);
+  secondPopulation = nullptr;
 
   for (int i = 0; i < neighbourhood.size(); i++) {
     neighbourhood[i].clear();
@@ -48,155 +45,62 @@ MOEAD_MPP::~MOEAD_MPP(void) {
   referencePoint = nullptr;
 }
 
-void MOEAD_MPP::runGeneration() {
-// For each individual (subproblem) in the current population
-#ifdef __MOEAD_MPP_DEBUG__
-  std::cout << "\tGeneration: " << this->getGeneration()
-            << "\tEvals: " << this->getPerformedEvaluations()
-            << "\tID(RP): " << referencePoint->getFeasibility() << " ("
-            << referencePoint->getObj(0) << "," << referencePoint->getObj(1)
-            << ")" << std::endl;
-#endif
-  const double delta = 0.9;
-  offspringPop.clear();
-  offspringPop.reserve(getPopulationSize());
-  for (int i = 0; i < getPopulationSize(); i++) {
-    // Version que gestiona las restricciones
-    bool useWholePop = ((rand() / RAND_MAX) < delta) ? false : true;
-    double minIDS = 0.0, maxIDS = 0.0;
-    computeIDRanges(minIDS, maxIDS);
-    double threshold = minIDS + 0.3 * (maxIDS - minIDS);
-
-    // Creates a new offspring by applying the variation operators
-    Individual *offSpring = createOffspring(i, useWholePop);
-    // Updates the state of the algorithm
-    updateReferencePoint(offSpring);
-    updateNeighbouringSolution(offSpring, i, threshold, useWholePop);
-    offspringPop.push_back(offSpring->internalClone());
-    delete (offSpring);
+void MOEAD_MPP::fillPopWithNewIndsAndEvaluate() {
+  if (getPopulationSize() == -1) {
+    cerr << "Warning: fillPopWithNewInds called but pSize has not been "
+            "fixed. Using default value: 25"
+         << endl;
+    setPopulationSize(25);
   }
-  // Aplicamos la actualizacion de BNP
-  BNPSurvivalSelection();
-  updateSecondPopulation();
+  const int NUM_OBJS = 2;
+  for (int i = population->size(); i < getPopulationSize(); i++) {
+    Individual *ind = getSampleInd()->internalClone();
+    ind->setAuxDataSize(NUM_OBJS * NUM_OBJS);
+    ind->setAuxData(0, weightVector[i][0]);
+    ind->setAuxData(1, weightVector[i][1]);
+
+    ind->restart();
+    ind->dependentLocalSearch();
+    updateReferencePoint(ind);
+    population->push_back(ind);
+  }
 }
 
 /**
- * Método para calcular los individuos que sobreviven a una generacion del
+ * Método principal del algoritmo MOEA/D que ejecuta una iteración completa del
  * algoritmo
- *
- * Basado en MPP CEC 2019
- *
+ * Esta versión incluye las modoficaciones propuestas en la versión del MOEA/D
+ * para la gestión de restricciones en problemas multi-objetivo.
  */
-void MOEAD_MPP::BNPSurvivalSelection() {
-  const double initialD = 0.5;
-  vector<Individual *> penalized;
-  vector<Individual *> currentIndividuals;
-  currentIndividuals.reserve(getPopulationSize() + offspringPop.size());
-
+void MOEAD_MPP::runGeneration() {
+  // For each individual (subproblem) in the current population
   for (int i = 0; i < getPopulationSize(); i++) {
-    currentIndividuals.push_back((*population)[i]->internalClone());
-    delete (*population)[i];
-    (*population)[i] = nullptr;
-  }
-  for (int i = 0; i < offspringPop.size(); i++) {
-    currentIndividuals.push_back(offspringPop[i]->internalClone());
-    delete (offspringPop[i]);
-    offspringPop[i] = nullptr;
-  }
-  sort(currentIndividuals.begin(), currentIndividuals.end(),
-       orderByFeasibility);
-  vector<Individual *> newPopulation;
-  newPopulation.reserve(getPopulationSize());
-  newPopulation.push_back(currentIndividuals[0]->internalClone());
-  currentIndividuals.erase(currentIndividuals.begin());
-
-  double d =
-      initialD - initialD * (getPerformedEvaluations() / getCritStopValue());
-  while (newPopulation.size() < getPopulationSize()) {
-    for (unsigned i = 0; i < currentIndividuals.size(); i++) {
-      // Distancia al vecino mas cercano en NewPopulation
-      double closest = std::numeric_limits<double>::max();
-      for (Individual *newInd : newPopulation) {
-        double distance = currentIndividuals[i]->getEuclideanDistance(newInd);
-        if (distance < closest) {
-          closest = distance;
-        }
-      }
-      if (closest < d) {
-        penalized.push_back(currentIndividuals[i]->internalClone());
-        currentIndividuals.erase(currentIndividuals.begin() + i);
-      }
+    // Creates a new offspring by applying the variation operators
+    Individual *offSpring = createOffspring(i);
+    // Updates the state of the algorithm
+    updateReferencePoint(offSpring, true);
+    updateParentSolution(offSpring, i);
+    if (useArchive) {
+      updateSecondPopulation(offSpring);
     }
-    // Buscamos el individuo con mayor penalizacion
-    double distancePenalized = std::numeric_limits<double>::min();
-    vector<Individual *>::iterator largestPenalized = penalized.begin();
-    for (vector<Individual *>::iterator it = penalized.begin();
-         it != penalized.end(); it++) {
-      for (Individual *newInd : newPopulation) {
-        double distance = (*it)->getEuclideanDistance(newInd);
-        if (distance > distancePenalized) {
-          distancePenalized = distance;
-          largestPenalized = it;
-        }
-      }
-    }
-    Individual *selected = getSampleInd()->internalClone();
-    if (currentIndividuals.empty()) {
-      selected = (*largestPenalized)->internalClone();
-      penalized.erase(largestPenalized);
-    } else {
-      sort(currentIndividuals.begin(), currentIndividuals.end(),
-           orderByFeasibility);
-      selected = currentIndividuals[0]->internalClone();
-      currentIndividuals.erase(currentIndividuals.begin());
-    }
-    newPopulation.push_back(selected->internalClone());
-    delete (selected);
+    delete (offSpring);
+    offSpring = nullptr;
   }
-  // Actualizamos la poblacion
-  population->clear();
-  population->reserve(getPopulationSize());
-  for (int i = 0; i < newPopulation.size(); i++) {
-    population->push_back(newPopulation[i]->internalClone());
-    delete (newPopulation[i]);
-    newPopulation[i] = nullptr;
-  }
-  for (int i = 0; i < currentIndividuals.size(); i++) {
-    delete (currentIndividuals[i]);
-    currentIndividuals[i] = nullptr;
-  }
-  for (int i = 0; i < penalized.size(); i++) {
-    delete (penalized[i]);
-    penalized[i] = nullptr;
-  }
-
-  penalized.clear();
-  penalized.shrink_to_fit();
-  newPopulation.clear();
-  newPopulation.shrink_to_fit();
-  currentIndividuals.clear();
-  currentIndividuals.shrink_to_fit();
-  offspringPop.clear();
-  offspringPop.shrink_to_fit();
-}
-
-/**
- * Método empleado para calcular los rangos de factibildad de
- * la poblacion en un momento dado
- **/
-void MOEAD_MPP::computeIDRanges(double &minIDS, double &maxIDS) {
-  vector<Individual *> copy(getPopulationSize(), getSampleInd());
+#ifdef __MOEAD_MPP_DEBUG__
+  std::cout << "\tGeneration: " << getGeneration()
+            << "\tEvals: " << getPerformedEvaluations() << std::endl;
+  std::cout << "\tPopulation size = " << getPopulationSize() << std::endl;
   for (unsigned i = 0; i < getPopulationSize(); i++) {
-    copy[i] = (*population)[i]->internalClone();
+    std::cout << "\t" << i << ") ";
+    (*population)[i]->print(std::cout);
   }
-  sort(copy.begin(), copy.end(), orderByFeasibility);
-  minIDS = copy[0]->getFeasibility();
-  maxIDS = copy[getPopulationSize() - 1]->getFeasibility();
-
-  for (unsigned int i = 0; i < getPopulationSize(); i++) {
-    delete (copy[i]);
+  std::cout << "\tArchive size = " << secondPopulation->size() << std::endl;
+  for (unsigned i = 0; i < secondPopulation->size(); i++) {
+    std::cout << "\t" << i << ") ";
+    (*secondPopulation)[i]->print(std::cout);
   }
-  copy.clear();
+  std::cout << "\t========================================" << std::endl;
+#endif
 }
 
 bool MOEAD_MPP::init(const vector<string> &params) {
@@ -208,6 +112,7 @@ bool MOEAD_MPP::init(const vector<string> &params) {
     cerr << "Weight vectors file name" << endl;
     cerr << "Mutation rate pm" << endl;
     cerr << "Crossover rate pc" << endl;
+    cerr << "Using archive < 0 = NO, 1 = YES>" << endl;
     return false;
   }
 
@@ -222,13 +127,27 @@ bool MOEAD_MPP::init(const vector<string> &params) {
   initialiseReferencePoint();
   initialiseWeightVector();
   initialiseNeighbourhood();
+  useArchive = (atoi(params[5].c_str()) == 1) ? true : false;
   return true;
 }
 
-// Get solution from the external population (non-dominated solutions)
+/**
+ * Generamos el frente de soluciones con los individuos factibles
+ * - Archivo o población principal según configuracion
+ */
 void MOEAD_MPP::getSolution(MOFront *p) {
-  for (unsigned int i = 0; i < secondPopulation->size(); i++) {
-    p->insert((*secondPopulation)[i]);
+  if (useArchive) {
+    for (unsigned int i = 0; i < secondPopulation->size(); i++) {
+      if (abs((*secondPopulation)[i]->getFeasibility() - 0.0) < EPSILON) {
+        p->insert((*secondPopulation)[i]);
+      }
+    }
+  } else {
+    for (unsigned int i = 0; i < getPopulationSize(); i++) {
+      if (abs((*population)[i]->getFeasibility() - 0.0) < EPSILON) {
+        p->insert((*population)[i]);
+      }
+    }
   }
 }
 
@@ -248,14 +167,6 @@ void MOEAD_MPP::initialiseReferencePoint() {
   } else {
     referencePoint->setObj(1, std::numeric_limits<double>::min());
   }
-  referencePoint->setFeasibility(std::numeric_limits<double>::max());
-#ifdef __MOEAD_MPP_DEBUG__
-  std::cout << "\t\tInitial Reference Point: (" << referencePoint->getObj(0)
-            << "," << referencePoint->getObj(1)
-            << ") ID(S) = " << referencePoint->getFeasibility() << std::endl
-            << "\t\t=========================================================="
-            << std::endl;
-#endif
 }
 
 /**
@@ -326,22 +237,14 @@ void MOEAD_MPP::initialiseNeighbourhood() {
  * Método que aplica los operadores geneticos ç
  * para generar un nuevo individuo
  **/
-Individual *MOEAD_MPP::createOffspring(const int &i, const bool &useWholePop) {
+Individual *MOEAD_MPP::createOffspring(const int &i) {
   // Selects two neighboring solutions randomly
-  Individual *p1 = nullptr;
-  Individual *p2 = nullptr;
-  int idx1 = 0, idx2 = 0;
-  if (useWholePop) {
-    idx1 = (int)(getPopulationSize()) * (rand() / (RAND_MAX + 1.0));
-    idx2 = (int)(getPopulationSize()) * (rand() / (RAND_MAX + 1.0));
-  } else {
-    idx1 = (int)(getNeighbourhoodSize()) * (rand() / (RAND_MAX + 1.0));
-    idx2 = (int)(getNeighbourhoodSize()) * (rand() / (RAND_MAX + 1.0));
-    idx1 = neighbourhood[i][idx1];
-    idx2 = neighbourhood[i][idx2];
-  }
-  p1 = (*population)[idx1]->internalClone();
-  p2 = (*population)[idx2]->internalClone();
+  int idx1 = (int)(getNeighbourhoodSize()) * (rand() / (RAND_MAX + 1.0));
+  int idx2 = (int)(getNeighbourhoodSize()) * (rand() / (RAND_MAX + 1.0));
+  idx1 = neighbourhood[i][idx1];
+  idx2 = neighbourhood[i][idx2];
+  Individual *p1 = (*population)[idx1]->internalClone();
+  Individual *p2 = (*population)[idx2]->internalClone();
   // Crossover
   double vcross = rand() / (RAND_MAX + 1.0);
   if (vcross < pc) {
@@ -351,10 +254,16 @@ Individual *MOEAD_MPP::createOffspring(const int &i, const bool &useWholePop) {
   // Potential improvement: mutate p2 and select the best individual from both
   // p1 and p2
   p1->mutation(pm);
+  // Copiamos los pesos para poder realizar la ILS
+  p1->setAuxData(0, weightVector[i][0]);
+  p1->setAuxData(1, weightVector[i][1]);
+  p1->setAuxData(2, referencePoint->getObj(0));
+  p1->setAuxData(3, referencePoint->getObj(1));
   evaluate(p1);
   p1->dependentLocalSearch();
   // Free memory
   delete (p2);
+  p2 = nullptr;
   return p1;
 }
 
@@ -362,26 +271,23 @@ Individual *MOEAD_MPP::createOffspring(const int &i, const bool &useWholePop) {
  * Método que actualiza el punto de referencia
  * si hemos encontrado nuevos optimos
  **/
-void MOEAD_MPP::updateReferencePoint(Individual *ind) {
-  bool update = false;
-  const double epsilon = 0.0001;
-  const double chances = 0.1;
-
-  // Si mejora la factibilidad nos quedamos con este punto de referencia
-  if (ind->getFeasibility() < referencePoint->getFeasibility()) {
-    update = true;
-    // En caso de igualar ID lo cambiamos con cierta probabilidad
-  } else if ((abs(ind->getFeasibility() - referencePoint->getFeasibility()) <
-              epsilon) &&
-             ((rand() / RAND_MAX) < chances)) {
-    update = true;
-  }
-  // Si mejoramos o igualamos el ID actualizamos el RP
-  if (update) {
-    for (int i = 0; i < getNumberOfObj(); i++) {
-      referencePoint->setObj(i, ind->getObj(i));
+void MOEAD_MPP::updateReferencePoint(Individual *ind, bool copy) {
+  // Si no es factible lo descartamos directamente
+  if (ind->getFeasibility() != 0.0) {
+    return;
+  } else {
+    for (unsigned i = 0; i < ind->getNumberOfObj(); i++) {
+      if (ind->getObj(i) < referencePoint->getObj(i)) {
+        referencePoint->setObj(i, ind->getObj(i));
+      }
     }
-    referencePoint->setFeasibility(ind->getFeasibility());
+    // Copiamos el RP para cada individuo
+    if (copy) {
+      for (unsigned int i = 0; i < getPopulationSize(); i++) {
+        (*population)[i]->setAuxData(2, referencePoint->getObj(0));
+        (*population)[i]->setAuxData(3, referencePoint->getObj(1));
+      }
+    }
   }
 }
 
@@ -389,93 +295,66 @@ void MOEAD_MPP::updateReferencePoint(Individual *ind) {
  * Metodo para actualizar la poblacion secundaria eliminando los individuos
  * dominados por el individuo que recibe como parametro
  **/
-void MOEAD_MPP::updateSecondPopulation() {
-  const double epsilon = 0.0001;
+void MOEAD_MPP::updateSecondPopulation(Individual *ind) {
   // Removes from the external population all those individuals dominated by
   // individual ind
-  for (Individual *ind : (*population)) {
-    unsigned int i = 0;
-    while (i < secondPopulation->size()) {
-      // Primero comprobamos la factibilidad
-      bool remove = false;
-      if (ind->getFeasibility() < (*secondPopulation)[i]->getFeasibility()) {
-        remove = true;
-        // En caso de igualar comprobamos que lo domina
-      } else {
-        if ((abs(ind->getFeasibility() -
-                 (*secondPopulation)[i]->getFeasibility()) < epsilon) &&
-            (dominanceTest((*secondPopulation)[i], ind) == SECOND_DOMINATES)) {
-          remove = true;
-        }
-      }
-      // Eliminamos si procede
-      if (remove) {
-        delete ((*secondPopulation)[i]);
-        (*secondPopulation)[i] =
-            (*secondPopulation)[secondPopulation->size() - 1];
-        secondPopulation->pop_back();
-      } else
-        i++;
-    }
-
-    // Adds individual ind to the external population if no individual in the
-    // said population dominates it
-    bool insert = true;
-    i = 0;
-    while (i < secondPopulation->size()) {
-      if ((*secondPopulation)[i]->getFeasibility() < ind->getFeasibility()) {
-        insert = false;
-        break;
-      } else {
-        if ((abs(ind->getFeasibility() -
-                 (*secondPopulation)[i]->getFeasibility()) < epsilon) &&
-            (dominanceTest((*secondPopulation)[i], ind) == FIRST_DOMINATES)) {
-          insert = false;
-          break;
-        }
-      }
-      i++;
-    }
-    if (insert) secondPopulation->push_back(ind->internalClone());
+  if (ind->getFeasibility() != 0.0) {
+    return;
   }
+  unsigned int i = 0;
+  // Removes from the external population all those individuals dominated by
+  // individual ind
+  while (i < secondPopulation->size()) {
+    if (dominanceTest((*secondPopulation)[i], ind) == SECOND_DOMINATES) {
+      delete ((*secondPopulation)[i]);
+      (*secondPopulation)[i] =
+          (*secondPopulation)[secondPopulation->size() - 1];
+      secondPopulation->pop_back();
+    } else
+      i++;
+  }
+  // Adds individual ind to the external population if no individual in the said
+  // population dominates it
+  bool insert = true;
+  i = 0;
+  while (i < secondPopulation->size()) {
+    if (dominanceTest((*secondPopulation)[i], ind) == FIRST_DOMINATES) {
+      insert = false;
+      break;
+    }
+    i++;
+  }
+  if (insert) secondPopulation->push_back(ind->internalClone());
 }
 
 /**
- *  Metodo empleado para actualizar el fitness de los vecinos de un individuo
- *
+ * Metodo empleado para actualizar un individuo en caso de mejora de sus
+ * descendientes
+ *  - Mejora propuesta por Carlos Segura para evitar la perdida de diversidad
  **/
-void MOEAD_MPP::updateNeighbouringSolution(Individual *offspring, const int &i,
-                                           const double &threshold,
-                                           const bool &useWholePop) {
-  int searchLimit =
-      (useWholePop) ? getPopulationSize() : getNeighbourhoodSize();
-  for (int j = 0; j < searchLimit; j++) {
-    int idx = 0;
-    if (!useWholePop) {
-      // the index of the neighbouring subproblem
-      idx = neighbourhood[i][j];
-    } else
-      idx = j;
+void MOEAD_MPP::updateParentSolution(Individual *offspring, const int &i) {
+  // fitness of the offspring
+  double f1 = computingFitnessValue(offspring, weightVector[i]);
+  // fitness of the neighbour
+  double f2 = computingFitnessValue((*population)[i], weightVector[i]);
+  bool update = false;
+  // First check if its feasibility
+  if (offspring->getFeasibility() < (*population)[i]->getFeasibility()) {
+    update = true;
+  } else if ((offspring->getFeasibility() <=
+              (*population)[i]->getFeasibility()) &&
+             (f1 <= f2)) {
+    update = true;
+  }
 
-    // fitness of the offspring
-    double f1 = computingFitnessValue(offspring, weightVector[idx], threshold);
-    // fitness of the neighbour
-    double f2 =
-        computingFitnessValue((*population)[idx], weightVector[idx], threshold);
-    bool update = false;
-    // First check if its feasibility
-    if (offspring->getFeasibility() < (*population)[idx]->getFeasibility()) {
-      update = true;
-    } else if ((offspring->getFeasibility() <=
-                (*population)[idx]->getFeasibility()) &&
-               (f1 <= f2)) {
-      update = true;
-    }
-
-    if (update) {
-      delete ((*population)[idx]);
-      (*population)[idx] = offspring->internalClone();
-    }
+  if (update) {
+    delete ((*population)[i]);
+    (*population)[i] = offspring->internalClone();
+    // Se copian los pesos para poder aplicar la ILS
+    (*population)[i]->setAuxData(0, weightVector[i][0]);
+    (*population)[i]->setAuxData(1, weightVector[i][1]);
+    (*population)[i]->setAuxData(2, referencePoint->getObj(0));
+    (*population)[i]->setAuxData(3, referencePoint->getObj(1));
   }
 }
 
@@ -484,24 +363,14 @@ void MOEAD_MPP::updateNeighbouringSolution(Individual *offspring, const int &i,
  * Tchebycheff approach
  *
  **/
-double MOEAD_MPP::computingFitnessValue(Individual *ind, vector<double> &lambda,
-                                        const double &threshold) {
+double MOEAD_MPP::computingFitnessValue(Individual *ind,
+                                        vector<double> &lambda) {
   double fitness = std::numeric_limits<double>::min();
-  const double scaling1 = 0.01;
-  const double scaling2 = 20;
-  double penalty = 0.0;
-  // Calculamos la penalizacion que le corresponde
-  if (ind->getFeasibility() < threshold) {
-    penalty = scaling1 * ind->getFeasibility() * ind->getFeasibility();
-  } else {
-    penalty = scaling1 * threshold * threshold +
-              scaling2 * (ind->getFeasibility() - threshold);
-  }
   for (int i = 0; i < getNumberOfObj(); i++) {
-    double dif = 1.1 * referencePoint->getObj(i) - ind->getObj(i);
-    double s = lambda[i] * (dif > 0 ? dif : -dif);
-    // A la funcion Tchebycheff le añadimos el factor de penalizacion
-    fitness = s + penalty;
+    double eval = (abs(ind->getObj(i) - referencePoint->getObj(i))) * lambda[i];
+    if (eval > fitness) {
+      fitness = eval;
+    }
   }
   return fitness;
 }
@@ -545,4 +414,5 @@ void MOEAD_MPP::printInfo(ostream &os) const {
   os << "Neighbourhood size (T) = " << getNeighbourhoodSize() << endl;
   os << "Mutation rate = " << pm << endl;
   os << "Crossover rate = " << pc << endl;
+  os << "Using Archive = " << std::boolalpha << useArchive << std::endl;
 }

@@ -86,13 +86,19 @@ class MenuPlanning : public Individual {
   vector<int> badDays;
   double heaviestNut;
   double heaviestType;
+  double originalCost, originalRepetition;
+  bool partial;
+  double requiredFeasibility;
 
+  // Variables para la normalizacion de objetivos en la ILS
+  static double minCost, maxCost;
+  static double minRepetition, maxRepetition;
   void dependentCrossover(Individual *ind);  // Operadro de cruce especifico
   void dependentMutation(double pm);         // Operador de mutacion específico
 
  public:
   MenuPlanning();
-  virtual ~MenuPlanning(){};
+  virtual ~MenuPlanning();
 
   bool init(const vector<string> &params);  // METCO init
   void evaluate(void);  // Metodo de evaluacion de individuos MenuPlanning
@@ -100,6 +106,9 @@ class MenuPlanning : public Individual {
   void restart(void);             // Generacion aleatoria del individuos
   void set_gruposAl(void);        // Metodo que define los grupos de alimentos
   double computeFeasibility();    // Calcula la factibilidad de los individuos
+  double computingFitnessValue();
+
+  static void setObjectivesRanges(const int &);
 
   // Operadores de cruce para MPP basados en MPP CEC 2019
   void uniformCrossover(Individual *ind2);
@@ -115,20 +124,7 @@ class MenuPlanning : public Individual {
 #endif
 
   // Lectura de ficheros de platos
-  void set_Platos(void) {
-    set_VectoresPlatos(
-        "/home/amarrero/Tools/software-metco/metco/src/plugins/problems/"
-        "MenuPlanning/databaseMenus/primerosplatos.txt",
-        v_primerosPlatos);
-    set_VectoresPlatos(
-        "/home/amarrero/Tools/software-metco/metco/src/plugins/problems/"
-        "MenuPlanning/databaseMenus/segundosplatos.txt",
-        v_segundosPlatos);
-    set_VectoresPlatos(
-        "/home/amarrero/Tools/software-metco/metco/src/plugins/problems/"
-        "MenuPlanning/databaseMenus/postres.txt",
-        v_postres);
-  }
+  void set_Platos(void);
   void set_VectoresPlatos(const char *c_filename, vector<infoPlatos> &v_vecP);
 
   void set_vectorCompatibilidad(void);  // Calcula la compatibilidad
@@ -174,8 +170,10 @@ class MenuPlanning : public Individual {
   void mostrarPlatos(void);
 
  private:
+  static string pathToDB;
   static const int N_OBJS;
   static const int MAX_INT;
+  static const int N_ARGS;
 };
 
 #endif

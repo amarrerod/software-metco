@@ -54,7 +54,7 @@ SODIR = sodir
 LIBRARYDYR = library
 FLEX = flex
 BISON = bison
-CCFLAGS = -c -O2 -g -std=c++14 
+CCFLAGS = -c -O2 -ggdb -std=c++14 -fno-omit-frame-pointer
 IFLAGS = -I. -I.. -I../utils -I../../../src_external/hv-1.1-src
 DFLAGS =
 LFLAGS = -fPIC

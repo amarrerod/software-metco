@@ -1,7 +1,7 @@
 LFLAGS = -shared 
 OBJDIR = objdir
 SODIR = sodir
-LIBRARYDIR = library 
+LIBRARYDIR = library
 OUTPUTPRINTERDIR = ../../plugins/outputPrinters/
 IFLAGS= -I../ -I$(OUTPUTPRINTERDIR)$(outputPrinter)/ -I../utils/
 SO_FILE= $(SODIR)/$(outputPrinter).so
@@ -10,7 +10,7 @@ O_FILE= $(OBJDIR)/$(outputPrinter).o
 C_FILE:=$(OUTPUTPRINTERDIR)$(outputPrinter)/$(outputPrinter).cpp
 H_FILE:=$(OUTPUTPRINTERDIR)$(outputPrinter)/$(outputPrinter).h
 LIBRARY_C_FILE:=$(OUTPUTPRINTERDIR)$(outputPrinter)/$(outputPrinter).library.cpp
-LIBRARY_O_FILE:=$(outputPrinter).library.o
+LIBRARY_O_FILE:=$(LIBRARYDIR)/$(outputPrinter).library.o
 H_FILE:=$(OUTPUTPRINTERDIR)$(outputPrinter)/$(outputPrinter).h
 FILE_TO_CHANGE:=../complete.c
 OBJ_FILES:=$(OBJDIR)/OutputPrinter.reloc.o $(OBJDIR)/Individual.reloc.o $(OBJDIR)/MOFrontBinaryInteger.reloc.o $(OBJDIR)/MOFrontVector_noMPI.reloc.o $(OBJDIR)/MOFront.reloc.o $(OBJDIR)/EA.reloc.o $(OBJDIR)/utils.reloc.o $(OBJDIR)/Plugin.reloc.o $(OBJDIR)/hv.reloc.o $(OBJDIR)/avl.reloc.o 

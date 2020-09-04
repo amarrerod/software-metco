@@ -29,7 +29,7 @@
 #include "Individual.h"
 #include "MOFront.h"
 
-#define __MOEAD_MPP_DEBUG__
+//#define __MOEAD_MPP_DEBUG__
 
 using namespace std;
 
@@ -53,6 +53,9 @@ class MOEAD_MPP : public EA {
 
   // Shows information of the algorithm
   void printInfo(ostream &os) const;
+
+  // Metodo para inicializar la poblacion e incluir los pesos para cada ind
+  virtual void fillPopWithNewIndsAndEvaluate();
 
   // Getters and setters
   inline string getName() const { return "MOEA/D"; }
@@ -100,11 +103,9 @@ class MOEAD_MPP : public EA {
   // External population
   vector<Individual *> *secondPopulation;
 
-  // Offspring population generated in each iteration
-  vector<Individual *> offspringPop;
+  bool useArchive;
 
   // Private methods:
-
   // Initialises the reference point
   void initialiseReferencePoint();
 
@@ -118,30 +119,21 @@ class MOEAD_MPP : public EA {
   void initialisePopulation();
 
   // Generate an offsprings
-  Individual *createOffspring(const int &i, const bool &);
+  Individual *createOffspring(const int &i);
 
   // Updates the reference point
-  void updateReferencePoint(Individual *ind);
+  void updateReferencePoint(Individual *ind, bool copy = false);
 
   // Updates the external population with non-dominated solutions
-  void updateSecondPopulation();
+  void updateSecondPopulation(Individual *);
 
   // Compares a novel offspring to its neighboring solutions in order to update
   // the neighbourhood
-  void updateNeighbouringSolution(Individual *ind, const int &i, const double &,
-                                  const bool &);
+  void updateParentSolution(Individual *ind, const int &i);
 
   // Computes the fitness value of a particular individual by considering the
   // Tchebycheff approach
-  double computingFitnessValue(Individual *ind, vector<double> &lambda,
-                               const double &);
-
-  void computeIDRanges(double &minIDS, double &maxIDS);
-
-  void BNPSurvivalSelection();
-
-  // Survival Selection Technique Based on BNP - MPP CEC 2019
-  void survivorSelectionBNP();
+  double computingFitnessValue(Individual *ind, vector<double> &lambda);
 
   double computeClosesDistance(const unsigned int &i);
 
@@ -156,6 +148,7 @@ class MOEAD_MPP : public EA {
  private:
   const static int INITIAL_GENERATION;
   const static int NUM_PARAMS;
+  const static double EPSILON;
 };
 
 #endif
