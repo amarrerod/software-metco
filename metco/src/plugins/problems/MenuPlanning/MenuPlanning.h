@@ -113,6 +113,7 @@ class MenuPlanning : public Individual {
   // Operadores de cruce para MPP basados en MPP CEC 2019
   void uniformCrossover(Individual *ind2);
   void pairBasedCrossover(Individual *ind2);
+  void updateInnerReference();
 
   // Búsqueda Local HillClimbing basada en MPP CEC 2019
   virtual void dependentLocalSearch();

@@ -371,6 +371,24 @@ void MenuPlanning::pairBasedCrossover(Individual *i2) {
 }
 
 /**
+ * Buscamos mejoras en el punto de referencia
+ * tras aplicar ILS
+ */
+void MenuPlanning::updateInnerReference() {
+  // Si no es factible lo descartamos directamente
+  if (getFeasibility() != 0.0) {
+    return;
+  } else {
+    if (getObj(0) < getAuxData(2)) {
+      setAuxData(2, getObj(0));
+    }
+    if (getObj(1) < getAuxData(3)) {
+      setAuxData(3, getObj(1));
+    }
+  }
+}
+
+/**
  * ILS Basada en MPP CEC 2019
  *
  **/
@@ -389,11 +407,13 @@ void MenuPlanning::dependentLocalSearch() {
   }
   vector<double> bestIndividual = var;
   evaluate();
+  updateInnerReference();
   pair<double, double> bestResult =
       pair<double, double>(getFeasibility(), computingFitnessValue());
   for (int i = 0; i < 100; i++) {
     partial = false;
     evaluate();
+    updateInnerReference();
     pair<double, double> currentResult =
         pair<double, double>(getFeasibility(), computingFitnessValue());
 
@@ -407,6 +427,7 @@ void MenuPlanning::dependentLocalSearch() {
         partial = true;
         requiredFeasibility = currentResult.first;
         evaluate();
+        updateInnerReference();
         partial = false;
         pair<double, double> newResult =
             pair<double, double>(getFeasibility(), computingFitnessValue());
@@ -425,6 +446,7 @@ void MenuPlanning::dependentLocalSearch() {
       bestIndividual = var;
     }
     evaluate();
+    updateInnerReference();
     if (badDays.size() == 0) {
       if (heaviestNut != -1) {
         vector<pair<double, int>> infoNut;
@@ -679,7 +701,6 @@ void MenuPlanning::evaluate(void) {
  **/
 void MenuPlanning::print(ostream &os) const {
   for (unsigned int i = 0; i < getNumberOfVar(); i++) os << getVar(i) << " ";
-  os << this->getFeasibility() << " ";
   os << originalCost << " " << originalRepetition << std::endl;
 }
 #endif
