@@ -13,6 +13,8 @@
 #include <chrono>
 #include <limits>
 
+#include "MOFrontVector.h"
+
 const int MOEAD_MPP::INITIAL_GENERATION = 0;
 const int MOEAD_MPP::NUM_PARAMS = 6;
 const double MOEAD_MPP::EPSILON = 1e-9;
@@ -149,6 +151,23 @@ void MOEAD_MPP::getSolution(MOFront *p) {
       }
     }
   }
+}
+
+/**
+ * Generamos el frente de soluciones con los individuos factibles
+ * - Archivo o población principal según configuracion
+ */
+MOFront *MOEAD_MPP::getLocalSolution() {
+  if (secondPopulation->size() == 0) {
+    return nullptr;
+  }
+  MOFront *p = new MOFrontVector(getSampleInd(), false, false);
+  for (unsigned int i = 0; i < secondPopulation->size(); i++) {
+    if (abs((*secondPopulation)[i]->getFeasibility() - 0.0) < EPSILON) {
+      p->insert((*secondPopulation)[i]);
+    }
+  }
+  return p;
 }
 
 /**
@@ -341,9 +360,9 @@ void MOEAD_MPP::updateParentSolution(Individual *offspring, const int &i) {
   // First check if its feasibility
   if (offspring->getFeasibility() < (*population)[i]->getFeasibility()) {
     update = true;
-  } else if ((offspring->getFeasibility() <=
-              (*population)[i]->getFeasibility()) &&
-             (f1 <= f2)) {
+  } else if ((abs(offspring->getFeasibility() -
+                  (*population)[i]->getFeasibility()) < EPSILON) &&
+             (f1 < f2)) {
     update = true;
   }
 

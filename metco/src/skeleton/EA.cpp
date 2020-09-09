@@ -9,9 +9,12 @@
  ************************************************************************************/
 
 #include "EA.h"
+
 #include <dlfcn.h>
 #include <sys/time.h>
+
 #include <sstream>
+
 #include "Configuration.h"
 #include "MOFrontBinaryInteger.h"
 #include "MOFrontVector.h"
@@ -43,6 +46,11 @@ EA::~EA() {
   for (unsigned int i = 0; i < population->size(); i++) delete (*population)[i];
   delete population;
 }
+
+/**
+ * Returns the localsolution to printers
+ */
+MOFront *EA::getLocalSolution() { return localSolution; }
 
 void EA::setGenerateArchive(const bool generate, const int type) {
   this->generateArchive = generate;

@@ -51,6 +51,8 @@ class MOEAD_MPP : public EA {
   // in the corresponding paper)
   void getSolution(MOFront *p);
 
+  virtual MOFront *getLocalSolution(void);
+
   // Shows information of the algorithm
   void printInfo(ostream &os) const;
 

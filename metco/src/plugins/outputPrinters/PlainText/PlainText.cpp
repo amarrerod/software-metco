@@ -5,6 +5,8 @@
 
 #include "MOFrontVector.h"
 
+//#define __MOEAD_MPP_ARCHIVE__
+
 void PlainText::printSolution(EA *ga, bool end) {
   outputFile.precision(18);
   if (end) {
@@ -29,6 +31,14 @@ void PlainText::printSolution(EA *ga, bool end) {
         outputFile << p;
         delete p;
         p = nullptr;
+#ifdef __MOEAD_MPP_ARCHIVE__
+        p = ga->getLocalSolution();
+        if (p != nullptr) {
+          outputFile << p;
+          delete p;
+          p = nullptr;
+        }
+#endif
       } catch (const std::bad_alloc &except) {
         std::cerr << "Allocation failed at PlainText" << endl;
       }
@@ -48,7 +58,7 @@ void PlainText::printSolution(EA *ga, bool end) {
         MOFront *p = new MOFrontVector(ga->getSampleInd(), false, false);
         ga->getSolution(p);
         outputFile << p;
-        delete(p);
+        delete (p);
       } catch (const std::bad_alloc &except) {
         std::cerr << "Allocation failed at PlainText" << endl;
       }
@@ -68,4 +78,4 @@ bool PlainText::init(const vector<string> &params) {
   return true;
 }
 
-void PlainText::finish() { outputFile.close();}
+void PlainText::finish() { outputFile.close(); }
